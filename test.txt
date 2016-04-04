@@ -1,0 +1,9 @@
+BINDIR = '/usr/local/bin'
+CFLAGS = ['-O3', '-g', '-O2']
+CP = ['/bin/cp']
+CXXFLAGS = ['+oopla', '-O2', '-g']
+FOO = 'TEST'
+LIBDIR = '/usr/local/lib'
+OOPLA = ['-h', '-g']
+PREFIX = '/usr/local'
+TOUCH = ['/usr/bin/touch']
