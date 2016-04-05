@@ -9,23 +9,23 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_6e86e868d89a4dc081034929913fbe68/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_9aaa1c8b3379fd6764b15d46a0d37a16/test.cpp[0m
 
-['/usr/bin/g++', '-DHAVE_STDIO_H=1', '../test.cpp', '-c', '-o', '/home/muchu/work/learn/FunctionalXpp/build/.conf_check_6e86e868d89a4dc081034929913fbe68/testbuild/test.cpp.1.o']
+['/usr/bin/g++', '-DHAVE_STDIO_H=1', '../test.cpp', '-c', '-o', '/home/muchu/work/learn/FunctionalXpp/build/.conf_check_9aaa1c8b3379fd6764b15d46a0d37a16/testbuild/test.cpp.1.o']
 err: ../test.cpp:1:20: fatal error: sadlib.h: No such file or directory
+ #include <sadlib.h>
+                    ^
 compilation terminated.
 
 from /home/muchu/work/learn/FunctionalXpp/test: Test does not build: Traceback (most recent call last):
   File "/home/muchu/libs/waf-1.8.20/.waf-1.8.20-98d61b5ed5f5418d8bf5c067e4909830/waflib/Configure.py", line 335, in run_build
     bld.compile()
-  File "/home/muchu/libs/waf-1.8.20/.waf-1.8.20-98d61b5ed5f5418d8bf5c067e4909830/waflib/Tools/errcheck.py", line 126, in check_compile
-    ret=self.orig_compile()
   File "/home/muchu/libs/waf-1.8.20/.waf-1.8.20-98d61b5ed5f5418d8bf5c067e4909830/waflib/Build.py", line 185, in compile
     raise Errors.BuildError(self.producer.error)
 BuildError: Build failed
  -> task in 'testprog' failed (exit status 1): 
-	{task 139990681098896: cxx test.cpp -> test.cpp.1.o}
-['/usr/bin/g++', '-DHAVE_STDIO_H=1', '../test.cpp', '-c', '-o', '/home/muchu/work/learn/FunctionalXpp/build/.conf_check_6e86e868d89a4dc081034929913fbe68/testbuild/test.cpp.1.o']
+	{task 139852333586000: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/g++', '-DHAVE_STDIO_H=1', '../test.cpp', '-c', '-o', '/home/muchu/work/learn/FunctionalXpp/build/.conf_check_9aaa1c8b3379fd6764b15d46a0d37a16/testbuild/test.cpp.1.o']
 
 not found
 from /home/muchu/work/learn/FunctionalXpp/test: The configuration failed

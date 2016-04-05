@@ -46,9 +46,9 @@ which we begin to learn from the Waf book"
 def build(bld):
 	bld.program(source="main.cpp",
                     target="test",
-                    includes = ["../include", "/home/muchu/libs/Catch/include"],
+                    includes = [".", "..", "../include", "/usr/local/include/Catch"],
                     cxxflags = ["-Wall", "-Wno-unknown-pragmas", "-Wextra", "-Wconversion",
-                                "-std=c++14"]
+                                 "-O3", "-std=c++14"]
                     )
 
 	if bld.cmd != "clean":

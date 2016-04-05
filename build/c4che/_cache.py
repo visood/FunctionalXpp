@@ -1,8 +1,8 @@
 AR = ['/usr/bin/ar']
 ARFLAGS = ['rcs']
 BINDIR = '/usr/local/bin'
-CC_VERSION = ('4', '8', '4')
-COMPILER_CXX = 'g++'
+CC_VERSION = ('4', '8', '5')
+COMPILER_CXX = 'g++-5'
 CPPPATH_ST = '-I%s'
 CXX = ['/usr/bin/g++']
 CXXFLAGS_MACBUNDLE = ['-fPIC']

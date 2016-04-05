@@ -24,12 +24,19 @@ def printWithContext(message, ctx, withContext = True):
 
 
 def options(opt):
+        opt.load("compiler_cxx")
 	opt.recurse('test')
 
+
 def configure(conf):
-	conf.load("compiler_cxx")
+        from waflib.Tools.compiler_cxx import cxx_compiler
+        cxx_compiler['linux'] = ['gcc-5', 'g++-5']
+        conf.env.COMPILER_CXX = "g++-5"
+        conf.load("compiler_cxx")
+        print conf.env
+	#conf.load("compiler_cxx")
 	conf.check(header_name="stdio.h", features="cxx cxxprogram", mandatory=False)
-	conf.recurse('test')
+	#conf.recurse('test')
 
 
 def describe(ctx):
@@ -41,7 +48,7 @@ which we begin to learn from the Waf book"
 	try:
 		print(ctx.env)
 	except:
-		print "No environment in Context"	
+		print "No environment in Context"
 	ctx.recurse('test')
 
 def build(bld):
