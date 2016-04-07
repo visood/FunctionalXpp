@@ -30,13 +30,11 @@ def options(opt):
 
 def configure(conf):
         from waflib.Tools.compiler_cxx import cxx_compiler
-        cxx_compiler['linux'] = ['gcc-5', 'g++-5']
-        conf.env.COMPILER_CXX = "g++-5"
+        conf.env.CXX = "/usr/bin/g++-5" #specify the cxx compiler.
         conf.load("compiler_cxx")
         print conf.env
-	#conf.load("compiler_cxx")
 	conf.check(header_name="stdio.h", features="cxx cxxprogram", mandatory=False)
-	#conf.recurse('test')
+	conf.recurse('test')
 
 
 def describe(ctx):
