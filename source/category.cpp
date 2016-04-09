@@ -116,7 +116,7 @@ int main()
   std::cout << std::endl;
   list4 > print;
   std::cout << std::endl;
-  list5 > print;
+  list1 > f > g > print;
   std::cout << std::endl;
   return 0;
 }
