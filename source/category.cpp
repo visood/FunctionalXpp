@@ -16,7 +16,7 @@ auto Id = [] (auto x) { return x; };
 // Define algebra of real-valued functions
 auto Add = [] (auto f, auto g)
 {
-  return [=] (auto x) { return f(x) + g(); };
+  return [=] (auto x) { return f(x) + g(x); };
 };
 
 auto Substract = [] (auto f, auto g)
@@ -61,6 +61,21 @@ auto operator ^ (G g, F f)
   return Compose(f,g);
 }
 
+// Simple wrapper for a double for currying
+auto Double = [] (auto x)
+{
+  return [=] (auto f) { return f(x); };
+};
+
+// Currying
+auto curry = [] (auto f)
+{
+  return [f] (auto x) 
+  { 
+    return [=] (auto y) { return f(x,y); };
+  };
+};
+
 // Wrapper around a parameter pack
 // Returns a lambda expecting a lambda that will be mapped to the list
 auto List = [] (auto ...elements)
@@ -68,7 +83,9 @@ auto List = [] (auto ...elements)
   return [=] (auto f) { return f(elements...); };
 };
 
-// fmap is a functor (x->y) => (f(x) -> f(y)) 
+// fmap is a functor (x->y) => (f(x) -> f(y))
+// Return a lambda expecting a lambda-list and have the same return type as List 
+// This is needed in order to chain operations
 auto fmap = [] (auto f)
 {
   return [f] (auto list) 
@@ -84,6 +101,26 @@ auto operator > (L l, F f)
   return fmap(f)(l);
 }
 
+// We can have monads by combining unit (return in haskell) and bind
+auto unit = [] (auto x)
+{
+  return [=] () { return x; };
+};
+
+auto bind = [] (auto u) 
+{    
+  return [=] (auto callback) 
+  {
+    return callback(u());    
+  };  
+};
+
+// Overload bind
+template <typename F, typename Element>
+auto operator >= (Element x, F f)
+{
+  return bind(unit(x))(f);
+}
 
 // generic lambda that returns the size of a parameter pack
 auto pack_size = [] (auto ...elements) 
@@ -100,6 +137,7 @@ int main()
 { 
   auto f = [] (auto x) { return x*x; };
   auto g = [] (auto x) { return x+2; };
+  auto phi = [] (auto x, auto y) { return x+y; };
   auto print = [] (auto x) { std::cout << x << " "; return x; };
   auto list1 = List(3,4,5);
   //auto list2 = fmap(f)(list1);
@@ -117,6 +155,11 @@ int main()
   list4 > print;
   std::cout << std::endl;
   list1 > f > g > print;
+  std::cout << std::endl;
+  std::cout << curry(phi)(3)(4) << std::endl;
+  std::cout << bind(unit(3))(f) << std::endl;
+  std::cout << (3 >= f >= f) << std::endl;
+  3 >= f >= (g^f) >= (g+f) >= print;
   std::cout << std::endl;
   return 0;
 }
