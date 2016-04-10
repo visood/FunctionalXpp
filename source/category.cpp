@@ -61,6 +61,32 @@ auto operator ^ (G g, F f)
   return Compose(f,g);
 }
 
+//recursive lambda factorial
+auto lambda_factorial = [] (int n)
+{
+  auto f = [] (int n, auto lambda) -> int
+  {
+    return n==0 ? 1 : n*lambda(n-1,lambda);
+  };
+  return f(n,f);
+};
+
+// Some kind of Y combinator
+auto Y = [] (auto f) 
+{
+  return f([f] (int n) -> int { return Y(f)(n); });
+};
+
+// Factorial "without" recursion
+auto fact = [] (auto f)
+{
+  return [f] (int n) -> int
+  {
+    return n==0 ? 1 : n*f(n-1);
+  };
+};
+
+
 // Simple wrapper for a double for currying
 auto Double = [] (auto x)
 {
@@ -161,5 +187,9 @@ int main()
   std::cout << (3 >= f >= f) << std::endl;
   3 >= f >= (g^f) >= (g+f) >= print;
   std::cout << std::endl;
+
+  auto factorial = Y(fact);
+  std::cout << factorial(4) << std::endl;
+  std::cout << lambda_factorial(4) << std::endl;
   return 0;
 }
