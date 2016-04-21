@@ -30,7 +30,7 @@ const T id(const T& t) { return t;}
 template< typename T >
 T id(T& t) { return t;}
 
-template<UnaryOp F, typename T>
+template<typename UnaryOp, typename T>
 class Xrange {
 public:
 Xrange(int32_t low, int32_t high):
@@ -85,7 +85,7 @@ Xrange(F f, int32_t low, int32_t high, int32_t delta):
     private:
         uint32_t _pos = 0;
         int32_t _delta = 1;
-        const static F _apply;
+        const static UnaryOp _apply;
         T current = _apply(_pos);
     };
 

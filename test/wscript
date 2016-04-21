@@ -54,5 +54,5 @@ def build(bld):
 	if bld.cmd != "clean":
 		from waflib import Logs
 		bld.logger = Logs.make_logger("test.log", "build") #to get a clean output
-		bld.check(header_name="sadlib.h", features="cxx cxxprogram", mandatory=False)
+		#bld.check(header_name="sadlib.h", features="cxx cxxprogram", mandatory=False), this is how you check a header
 		bld.logger = None
