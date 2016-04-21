@@ -44,11 +44,15 @@ which we begin to learn from the Waf book"
 
 
 def build(bld):
+        allIncludes = [".", "..", "../include",
+                       "/usr/local/include/Catch"]
+        cxxflags = ["-Wall", "-Wno-unknown-pragmas",
+                    "-Wextra", "-Wconversion",
+                    "-O3", "-std=c++14"]
 	bld.program(source="main.cpp",
                     target="test",
-                    includes = [".", "..", "../include", "/usr/local/include/Catch"],
-                    cxxflags = ["-Wall", "-Wno-unknown-pragmas", "-Wextra", "-Wconversion",
-                                 "-O3", "-std=c++14"]
+                    includes = allIncludes,
+                    cxxflags = cxxflags
                     )
 
 	if bld.cmd != "clean":
