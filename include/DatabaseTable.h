@@ -29,7 +29,7 @@ std::ostream& operator<<(std::ostream& out, const std::tuple<Args...>& t) {
 
 
 template <typename First, typename... Rest>
-    auto extended_tuple(std::tuple<Rest..> tup, First x) {
+    auto extended_tuple(std::tuple<Rest...> tup, First x) {
     return std::tuple_cat(tup, std::make_tuple(x));
 }
 
@@ -43,4 +43,25 @@ template < typename... Args>
 auto extract_values(std::vector<std::string> vec, std::tuple<Args...>& t){
     if (vec.size() == 0) return t;
     DataType::get<T>(vec[0]);
+}
+
+template <typename... Args>
+struct Row {
+  int index = 0;
+  std::tuple<Args...> data;
+}
+
+template <typename... Args>
+class DatabaseTable {
+  using RowType = std::tuple<Args...>;
+
+ public:
+ DatabaseTable(std::string tablename) : _name(tablename) {}
+
+  int nrow() {return _data.size()};
+  static constexpr int ncol() {return std::tuple_size<std::tuple<RowType> >::value;}
+
+ private:
+  const std::string _name;
+  std::vector<RowType> _data;
 }

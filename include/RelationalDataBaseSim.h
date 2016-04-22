@@ -46,3 +46,31 @@ T getValue(T& dtype, const std::string& datastr) {
     return dtype;
 }
 
+template<std::size_t>
+class DataStr {
+ public:
+ DataStr(int n) : _size(n) {}
+
+  template<typename T>
+ int insert(const T& x) {
+    std::istringstream i(x);
+    std::string x;
+    if ()
+  }
+}
+
+template<std::size_t>
+class DataStrTable {
+  //using DataStr = std::vector<std::string>;
+
+ public:
+ DataStrTable(char* argv) :
+  _colnames = strsplit(argv, " ") {}
+
+  int ncol() { return _colnames.size();}
+  int nrow() { return _data.size()};
+
+ private:
+  std::vector<std::string> _colnames;
+  std::vector<DataStr> _data;
+}
