@@ -1,116 +1,132 @@
 #include <limits>
 #include <dirent.h>
 #include <stdexcept>
+#include <iostream>
+#include <sstream>
+#include <algorithm>
+#include <string>
+#include <limits>
+#include <tuple>
 
-std::vector<std::string> getdir(std::string dir) {
-    DIR *dp;
-    struct dirent *dirp;
-    std::vector<std::string> files;
-    if ((dp = opendir(dir.c_str())) == NULL) {
-        std::cout << "Error: directory " << dir << " could not be opened." << std::endl;
-    } else {
-        while ((dirp = readdir(dp)) != NULL) {
-            files.push_back(std::string(dirp->d_name));
-        }
-        closedir(dp);
+
+std::string wordyOneToNine(uint x) {
+  if (x > 9) throw std::invalid_argument("wordyOneToNine cannot wordify number larger than 9");
+  if (x == 0) throw std::invalid_argument("wordyOneToNine cannot wordify 0");
+  switch (x) {
+  case 9:
+    return "nine";
+  case 8:
+    return "eight";
+  case 7:
+    return "seven";
+  case 6:
+    return "six";
+  case 5:
+    return "five";
+  case 4:
+    return "four";
+  case 3:
+    return "three";
+  case 2:
+    return "two";
+  case 1:
+    return "one";
+  case 0:
+    return "";
+  }
+  return "";
+}
+
+std::string wordyInteger(uint x) {
+  if (x > 1000) throw std::invalid_argument("wordInteger cannot wordify numbers that are larger than 1000");
+  std::string wordy;
+  if (x > 100) wordy = wordyOneToNine(x/100) + " hundred";
+  if (x > 100 and x % 100 > 0)  wordy += " and ";
+  x = x % 100;
+  switch (x / 10) {
+  case (9):
+    wordy += "ninety";
+    break;
+  case (8):
+    wordy += "eighty";
+    break;
+  case (7):
+    wordy += "seventy";
+    break;
+  case (6):
+    wordy += "sixty";
+    break;
+  case (5):
+    wordy += "fifty";
+    break;
+  case (4):
+    wordy += "forty";
+    break;
+  case (3):
+    wordy += "thirty";
+    break;
+  case (2):
+    wordy += "twenty";
+    break;
+  case (1):
+    switch (x % 10) {
+    case (9):
+      wordy += "nineteen";
+      return wordy;
+    case (8):
+      wordy += "eighteen";
+      return wordy;
+    case (7):
+      wordy += "seventeen";
+      return wordy;
+    case (6):
+      wordy += "sixteen";
+      return wordy;
+    case (5):
+      wordy += "fifteen";
+      return wordy;
+    case (4):
+      wordy += "fourteen";
+      return wordy;
+    case (3):
+      wordy += "thirteen";
+      return wordy;
+    case (2):
+      wordy += "twelve";
+      return wordy;
+    case (1):
+      wordy += "eleven";
+      return wordy;
     }
-    return files;
+  case (0):
+    break;
+  }
+  if (x % 10 == 0) return wordy;
+  if (x > 10 ) wordy += " ";
+  wordy += wordyOneToNine( x % 10 );
+  return wordy;
 }
 
-template<typename ContainerOut, typename ContainerIn >
-ContainerOut collect(ContainerIn xs, ContainerOut ys) {
-    ys.resize(xs.size());
-    std::copy(std::begin(xs), std::end(xs), std::begin(ys));
-    return ys;
-}
-
-template< typename T >
-const T id(const T& t) { return t;}
-
-template< typename T >
-T id(T& t) { return t;}
-
-template<typename UnaryOp, typename T>
-class Xrange {
-public:
-Xrange(int32_t low, int32_t high):
-  _low((high - low) >= 0 ? low : high),
-    _high((high - low) >= 0 ? high : low),
-    _delta((high - low) >= 0 ? 1 : -1),
-    _apply(id<int32_t>) {}
-
-Xrange(int32_t low, int32_t high, int32_t delta):
-  _low(delta*(high - low) >= 0 ? low : high),
-    _high(delta*(high - low) >= 0 ? high : low ),
-    _delta(delta),
-    _apply(id<int32_t>) {}
-
-Xrange(F f, int32_t low, int32_t high):
-  _low((high - low) >= 0 ? low : high),
-    _high((high - low) >= 0 ? high : low),
-    _delta((high - low) >= 0 ? 1 : -1),
-    _apply(f) {}
-
-Xrange(F f, int32_t low, int32_t high, int32_t delta):
-  _low(delta*(high - low) >= 0 ? low : high),
-    _high(delta*(high - low) >= 0 ? high : low ),
-    _delta(delta),
-    _apply(f) {}
-
-    class Iterator {
-    public:
-    Iterator(uint32_t pos, int32_t delta) : _pos(pos), _delta(delta) {}
-      using iterator_category = std::forward_iterator_tag;
-      using value_type = T;
-      using difference_type = int32_t;
-      using pointer = T*;
-      using reference = T&;
-      uint32_t pos() const { return _pos; }
-      int32_t delta() const {return _delta; }
-      const T& operator*() const { return _current; }
-      Iterator& operator++() {
-        _pos += _delta;
-        _current = _apply(_pos);
-        return *this;
-      }
-
-      bool operator!=(const Iterator& that) {
-        return _pos != that.pos() or _delta != that.delta();
-      }
-
-      bool operator==(const Iterator& that) {
-        return _pos == that.pos() and _delta == that.delta();
-      }
-
-    private:
-        uint32_t _pos = 0;
-        int32_t _delta = 1;
-        const static UnaryOp _apply;
-        T current = _apply(_pos);
-    };
-
-
-    int32_t low() const { return _low; }
-    int32_t high() const { return _high; }
-    int32_t delta() const {return _delta;}
-
-    int32_t size() { return _delta > 0 ? (_high - _low)/_delta : (_low - _high)/(-_delta); }
-
-    int32_t length() { return size(); }
-
-    Iterator begin() { return Iterator( _low, _delta); }
-    Iterator end() { return Iterator(_high, _delta); }
-
-
-private:
-    int32_t _low = 0;
-    int32_t _high = 0;
-    int32_t _delta = 1;
+//a type that holds an unsigned integer value
+template<std::size_t N>
+struct int_{
+    using decr = int_<N-1>;
+    using incr = int_<N+1>;
 };
 
-template< class Container >
-Container Range(uint32_t low, uint32_t high, int32_t delta) {
-    Xrange xr(low, high, delta);
-    Container out(xr.size());
-    return collect(Xrange(low, high, delta), out);
+template <class Tuple, size_t Pos>
+std::string strtup(const Tuple& t, int_<Pos>, const char delim = ',') {
+    std::stringstream s;
+    s << std::get<std::tuple_size<Tuple>::value - Pos > (t) << delim;
+    return  s.str() + strtup(t, int_<Pos-1>(), delim);
 }
+
+template <class Tuple>
+std::string strtup(const Tuple& t, int_<1>, const char delim = ",") {
+    std::stringstream s;
+    s << std::get<std::tuple_size<Tuple>::value - 1>(t);
+    return s.str();
+}
+
+
+

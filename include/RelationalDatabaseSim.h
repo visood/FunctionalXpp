@@ -1,10 +1,5 @@
-#include <iostream>
-#include <sstream>
-#include <algorithm>
-#include <tuple>
 #include "catch.hpp"
-#include <string>
-#include <limits>
+#include "util.h"
 
 template<typename T>
 struct DType {};
@@ -57,7 +52,7 @@ class DataStr {
 class StrRdbRow {
   //using DataStr = std::vector<std::string>;
 
- public:
+public:
 StrRdbRow(std::vector<std::string> row) : _data(row) {}
 
   uint nfields() const { return (uint) _data.size();}
@@ -80,8 +75,22 @@ StrRdbRow(std::vector<std::string> row) : _data(row) {}
     std::cout << std::endl;
   }
 
- private:
+private:
   std::vector<std::string> _data;
+};
+
+template <typename... Args>
+class Header {
+public:
+//Header(std::tuple<Args...> names): _names(names) {}
+Header(Args... names): _names(std::make_tuple(names...)) {}
+
+    std::string str() {
+        return strtup(_names, int_<sizeof...(Args)>(), '\t');
+    }
+
+private:
+    std::tuple<Args...> _names;
 };
 
 class StrRowRdbTable {
