@@ -120,5 +120,33 @@ TEST_CASE("Header containing a tuple of column names", "[tableHeader]") {
     auto hdr = Header<string, string, string>("first", "second", "third");
     REQUIRE( hdr.str() == "first\tsecond\tthird") ;
     auto hdr2 = Header<string, string, string, string>("first", "second", "third", "fourth");
-    REQUIRE( hdr2.str() == "first\t\second\tthird\tfourth");
+    REQUIRE( hdr2.str() == "first\tsecond\tthird\tfourth");
+}
+
+TEST_CASE("Simulate a Relational Database Table with column names", "[RDBSim], [RDBtableSim], [RDBtableWithHeader]") {
+    using string = std::string;
+    std::vector<std::vector<string> > table;
+    for (uint i = 0; i != 100; ++i) {
+        std::vector<string> row{ DataType::convert<string, double>((double) i),
+                DataType::convert<string, uint>(i),
+                wordyInteger(i)};
+        table.push_back(row);
+    }
+
+    //StrRowRdbTable* res = new StrRowRdbTable(3, table);
+    NamedStrRowRdbTable<string, string, string>* res = new NamedStrRowRdbTable<string, string, string>("first", "second", "third");
+    REQUIRE( res );
+
+    res->load(table);
+    REQUIRE( res->size() == (uint) table.size());
+    uint i = 0;
+    while (res->next()) {
+        //res->printCurrent();
+        REQUIRE( res->getDouble(1) == (double) i);
+        REQUIRE( res->getInt(2) == (int) i);
+        REQUIRE( res->getString(3) == wordyInteger(i));
+        i += 1;
+    }
+
+    delete res;
 }

@@ -117,6 +117,9 @@ StrRowRdbTable(uint ncol, const std::vector< std::vector<std::string> >& table) 
   void insert(StrRdbRow row) {
     push_back( StrRdbRow(row));
   }
+  void load(const std::vector<std::vector<std::string> >& table) {
+      for (auto row: table) insert(row);
+  }
   void push_back(StrRdbRow row) {
     check_row_size(row);
     _data.push_back(row);
@@ -141,6 +144,23 @@ StrRowRdbTable(uint ncol, const std::vector< std::vector<std::string> >& table) 
   uint _position = 0; //1 past the end
 };
 
+template <typename... Args>
+class NamedStrRowRdbTable : public StrRowRdbTable {
+public:
+NamedStrRowRdbTable(Args... hdrnames): StrRowRdbTable(std::tuple_size< std::tuple<Args...> >::value),
+     _header(hdrnames...) {
+        auto hdr = std::make_tuple(hdrnames...);
+        auto tup = std::get<std::tuple<Args...> >::value;
+        for(uint i = 0; i != tup;  ++i) {
+            _columnIndex[std::get<i>(hdr)] = i;
+        }
+    }
+
+
+private:
+    Header<Args...> _header;
+    std::unordered_map<std::string, uint> _columnIndex;
+};
 
 template<typename ResType>
 class IterableRDB {
