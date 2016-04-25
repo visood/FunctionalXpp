@@ -101,7 +101,7 @@ StrRowRdbTable(uint ncol, const std::vector< std::vector<std::string> >& table) 
                                   DataType::convert<std::string, int>(v.size()));
   }
   uint size() const { return (uint) _data.size();}
-  uint position() const { return _current;}
+  uint position() const { return _position;}
   void insert(std::vector<std::string> row) {
     push_back( StrRdbRow(row));
   }
@@ -114,28 +114,22 @@ StrRowRdbTable(uint ncol, const std::vector< std::vector<std::string> >& table) 
   }
 
   StrRowRdbTable* next()  {
-    if (not _started) {
-      _started = true;
-    } else {
-      _current += 1;
-    }
-    if (_current >= _data.size()) { return nullptr;}
+    if (++_position > _data.size()) { return nullptr;}
     return this;
   }
 
-  std::string getString(uint index) const {  return _data[_current].getString(index);}
-  double getDouble(uint index) const {  return _data[_current].getDouble(index);}
-  int getInt(uint index) const {  return  _data[_current].getInt(index);}
+  std::string getString(uint index) const {  return _data[_position - 1].getString(index);}
+  double getDouble(uint index) const {  return _data[_position - 1].getDouble(index);}
+  int getInt(uint index) const {  return  _data[_position - 1].getInt(index);}
 
   void printCurrent() {
-    _data[_current].print();
+    _data[_position - 1].print();
   }
  private:
   uint _ncol = 0;
   uint _nrow = 0;
   std::vector< StrRdbRow > _data;
-  uint _current = 0;
-  bool _started = false;
+  uint _position = 0; //1 past the end
 };
 
 
@@ -146,7 +140,7 @@ IterableRDB(ResType* res) : _start(res) {}
 
   class Iterator {
   public:
-  Iterator(ResType* res, int p) : _current(res), _position(p), _started(false) {}
+  Iterator(ResType* res, int p) : _current(res), _position(p) {}
 
     using self_type = Iterator;
     using self_reference = Iterator&;
@@ -160,15 +154,10 @@ IterableRDB(ResType* res) : _start(res) {}
     reference operator*() const { return _current;}
     pointer operator->() const {return &_current;}
     self_reference operator++() {
-      if (not _started) {
-        _started = true;
-      } else {
-        _position += 1;  
-      }
-      _current = _current->next();
-      if (not _current) {
+      if(not _current->next())
         _position = std::numeric_limits<int>::max();
-      }
+      else
+        _position += 1;
       return *this;
     }
     bool operator !=(const Iterator& that) const {
@@ -177,11 +166,10 @@ IterableRDB(ResType* res) : _start(res) {}
   private:
     ResType* _current;
     uint _position = 0;
-    bool _started = false;
   };
 
   const Iterator begin() const {
-    return Iterator(_start, 0);
+    return ++Iterator(_start, 0);
   }
 
   const Iterator end() const {
