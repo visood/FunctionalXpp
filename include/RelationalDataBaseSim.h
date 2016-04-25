@@ -59,18 +59,52 @@ class DataStr {
   }
 }
 
-template<std::size_t>
-class DataStrTable {
+class StrRdbRow {
   //using DataStr = std::vector<std::string>;
 
  public:
- DataStrTable(char* argv) :
-  _colnames = strsplit(argv, " ") {}
+ StrRdbRow(std::vector<std::string> row) : _data(row);
 
-  int ncol() { return _colnames.size();}
-  int nrow() { return _data.size()};
+  int nfields() const { return _data.size();}
+  void check_index(int index) const {
+    if (index >= _data.size())
+      throw std::invalid_argument("requested index " +
+                                  DataType::convert<std::string, int>(_data.size()) +
+                                  " is larger than row size " +
+                                  DataType::convert<std::string, int>(_row.size()));
+  }
+
+  std::string getString(int index) const { check_index; return _data[index];}
+  double getDouble(int index) const { check_index; return DataType::convert<double, std::string>(_data[index]);}
+  int getInt(int index) const { check_index; return  DataType::convert<int, std::string>(_data[index]);}
 
  private:
-  std::vector<std::string> _colnames;
-  std::vector<DataStr> _data;
+  std::vector<std::string> _data;
+};
+
+class StrRowRdbTable {
+ public:
+ StrRowRdbTable(int ncol) : _ncol(ncol), _nrow(0);
+
+  template<typename Sized>
+  void check_row_size(const Sized& v) {
+    if (v.size() != col)
+      throw std::invalid_argument("A row of " + DataType::convert<std::string, int>(_ncol) +
+                                  " cannot be extracted from a vector of length " +
+                                  DataType::convert<std::string, int>(v.size()));
+    }
+  void insert(std::vector<std::string> row) {
+    push_back( StrRdbRow(row));
+  }
+  void insert(StrRowRow row) {
+    push_back( StrRdbRow(row));
+  }
+  void push_back(StrRdbRow row) {
+    check_row_size(row);
+    _data.push_back(row);
+  }
+ private:
+  int _ncol = 0;
+  int _nrow = 0;
+  std::vector< StrRdbRow > _data;
 }
