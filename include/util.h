@@ -130,4 +130,23 @@ std::string strtup(const Tuple& t, int_<1>, const char delim = ",") {
 }
 
 
+//from a header of tuples we can create a map from the tuple elements to their tuple index
+template <class Tuple, size_t Pos>
+std::unordered_map<std::string, uint> tupindexes(const Tuple& t, int_<Pos>) {
+    auto map1 = tupindexes(t, int_<Pos-1>());
+    map1[std::get<Pos - 1>(t)] = Pos - 1;
+    return map1;
+}
 
+template <class Tuple>
+std::unordered_map<std::string, uint> tupindexes(const Tuple& t, int_<1>) {
+    std::unordered_map<std::string, uint> map;
+    map[std::get<0>(t)] = 0;
+    return map;
+}
+
+template <typename... Args>
+std::unordered_map<std::string, uint> tupindexes(Args... names) {
+    auto tup = std::make_tuple(names...);
+    return tupindexes(tup, int_<sizeof...(Args)>());
+}

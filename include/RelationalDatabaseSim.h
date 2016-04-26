@@ -93,6 +93,11 @@ private:
     std::tuple<Args...> _names;
 };
 
+template <typename... Args>
+Header<Args...> header(Args... names) {
+    return Header<Args...>(names...);
+}
+
 class StrRowRdbTable {
  public:
 StrRowRdbTable(uint ncol) : _ncol(ncol), _nrow(0) {}
@@ -102,6 +107,9 @@ StrRowRdbTable(uint ncol, const std::vector< std::vector<std::string> >& table) 
     }
   }
 
+
+    std::string className() {return "StrRowRdbTable";}
+
   template<typename Sized>
   void check_row_size(const Sized& v) const {
     if (v.size() != _ncol)
@@ -109,6 +117,7 @@ StrRowRdbTable(uint ncol, const std::vector< std::vector<std::string> >& table) 
                                   " cannot be extracted from a vector of length " +
                                   DataType::convert<std::string, int>(v.size()));
   }
+
   uint size() const { return (uint) _data.size();}
   uint position() const { return _position;}
   void insert(std::vector<std::string> row) {
@@ -125,42 +134,99 @@ StrRowRdbTable(uint ncol, const std::vector< std::vector<std::string> >& table) 
     _data.push_back(row);
   }
 
-  StrRowRdbTable* next()  {
+  StrRowRdbTable const* next() const  {
     if (++_position > _data.size()) { return nullptr;}
     return this;
   }
 
-  std::string getString(uint index) const {  return _data[_position - 1].getString(index);}
-  double getDouble(uint index) const {  return _data[_position - 1].getDouble(index);}
-  int getInt(uint index) const {  return  _data[_position - 1].getInt(index);}
+  std::string getString(const uint index) const {  return _data[_position - 1].getString(index);}
+  double getDouble(const uint index) const {  return _data[_position - 1].getDouble(index);}
+  int getInt(const uint index) const {  return  _data[_position - 1].getInt(index);}
 
   void printCurrent() {
     _data[_position - 1].print();
   }
- private:
+ protected:
   uint _ncol = 0;
   uint _nrow = 0;
   std::vector< StrRdbRow > _data;
-  uint _position = 0; //1 past the end
+  mutable uint _position = 0; //1 past the end
 };
 
 template <typename... Args>
 class NamedStrRowRdbTable : public StrRowRdbTable {
+    using string = std::string;
 public:
 NamedStrRowRdbTable(Args... hdrnames): StrRowRdbTable(std::tuple_size< std::tuple<Args...> >::value),
-     _header(hdrnames...) {
-        auto hdr = std::make_tuple(hdrnames...);
-        auto tup = std::get<std::tuple<Args...> >::value;
-        for(uint i = 0; i != tup;  ++i) {
-            _columnIndex[std::get<i>(hdr)] = i;
-        }
+        _header(hdrnames...), _columnIndex(tupindexes(hdrnames...)) {}
+
+
+    std::string className() {return "NamedStrRowRdbTable";}
+    void load(const std::vector<std::vector<string> >& table) {
+        StrRowRdbTable::load(table);
     }
-
-
+    NamedStrRowRdbTable const* next() const {
+        if(StrRowRdbTable::next()) return this;
+        return nullptr;
+    }
+    string getString(const string& clm) const {
+        return _data[_position - 1].getString(_columnIndex.at(clm));
+        //return StrRowRdbTable::getString(_columnIndex.at(clm));
+    }
+    double getDouble(const string& clm) const {
+        std::cout << "get Double called, should return value from mother" << std::endl;
+        std::cout << "size of data " << _data.size() << std::endl;
+        std::cout << "size of first element in data " << _data[0].size() << std::endl;
+        std::cout << "to obtain double value at row " << _position << std::endl;
+        std::cout << " which should be at position " << _columnIndex.at(clm) << std::endl;
+        std::cout << " maybe this works " << StrRowRdbTable::getDouble(1);
+        return _data[_position - 1].getDouble(_columnIndex.at(clm));
+        //return StrRowRdbTable::getDouble(_columnIndex.at(clm));
+    }
+    int getInt(const string& clm) const {
+        return _data[_position - 1].getInt(_columnIndex.at(clm));
+        //return StrRowRdbTable::getInt(_columnIndex.at(clm));
+    }
 private:
     Header<Args...> _header;
-    std::unordered_map<std::string, uint> _columnIndex;
+    const std::unordered_map< std::string, uint> _columnIndex;
 };
+
+template <class Table, typename... Args>
+class NamedTable : public Table {
+    using string = std::string;
+public:
+NamedTable(Args... hdrnames, const Table& table): _table(table), 
+        _header(hdrnames...), _columnIndex(tupindexes(hdrnames...)) {}
+
+    string getString(string clm) const { return _table.getString(_columnIndex.at(clm));}
+    double getDouble(string clm) const { return _table.getDouble(_columnIndex.at(clm));}
+    int getInt(string clm) const { return _table.getInt(_columnIndex.at(clm));}
+private:
+    Header<Args...> _header;
+    const std::unordered_map<std::string, uint> _columnIndex;
+    const Table& _table;
+};
+
+template <typename... Args, class Table>
+NamedTable<Args...> namedTable(Args... clms, const Table& table) {
+    return NamedTable<Args...>(clms..., table);
+}
+
+template <typename... Args, class Table>
+    NamedTable<Args..., Table>* ptrNamedTable(Args... clms, const Table& table) {
+    return new NamedTable<Args...>(clms..., table);
+}
+
+template <typename... Args>
+NamedStrRowRdbTable<Args...>* ptrNamedStrRowRdbTable(Args... clms) {
+    return new NamedStrRowRdbTable<Args...>(clms...);
+}
+
+template <typename... Args>
+NamedStrRowRdbTable<Args...> namedStrRowRdbTable(Args... clms) {
+    return NamedStrRowRdbTable<Args...>(clms...);
+}
 
 template<typename ResType>
 class IterableRDB {
