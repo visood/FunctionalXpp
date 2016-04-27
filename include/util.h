@@ -125,8 +125,10 @@ std::string strtup(const Tuple& t, int_<Pos>, const char delim = ',') {
 template <class Tuple>
 std::string strtup(const Tuple& t, int_<1>, const char delim = ",") {
     std::stringstream s;
-    s << std::get<std::tuple_size<Tuple>::value - 1>(t);
-    return s.str();
+    s << std::get<std::tuple_size<Tuple>::value - 1>(t) << delim;
+    std::string st = s.str();
+    st.pop_back();
+    return st;
 }
 
 
