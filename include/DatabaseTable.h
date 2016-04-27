@@ -7,105 +7,8 @@
 #include "RelationalDataBaseSim.h"
 
 
-//use templates to switch on desired return types
 
-template<typename T>
-struct switch_value {};
-
-template <>
-struct switch_value<int>
-{
-    enum class {value = 1};
-};
-
-template <>
-struct switch_value<double>
-{
-    enum class {value = 2};
-};
-
-template <>
-struct switch_value<std::string>
-{
-    enum class {value = 3};
-};
-
-template <typename T, typename R>
-T get (R* res, int idx)
-{
-    switch (switch_value<T>::value)
-    {
-    case 1:
-        return res->getInt32(idx);
-    case 2:
-        return res->getDouble(idx);
-    case 3:
-        return res->getString(idx);
-    }
-}
-
-
-//to obtain the types in a tuple
-template<class... Args>
-struct type_list
-{
-    template <std::size_t N>
-    using type = typename std::tuple_element<N, std::tuple<Args...>>::type;
-};
-
-//a type that holds an usigned interger value
-template<std::size_t N>
-struct int_{
-    using decr = int_<N-1>;
-    using incr = int_<N+1>;
-};
-
-template <class Tuple, size_t Pos>
-    std::ostream& stream_tuple(std::ostream& out, const Tuple& t, int_<Pos> ) {
-    out << std::get< std::tuple_size<Tuple>::value-Pos >(t) << ',';
-    return stream_tuple(out, t, int_<Pos-1>());
-}
-
-template <class Tuple>
-std::ostream& stream_tuple(std::ostream& out, const Tuple& t, int_<1> ) {
-    return out << std::get<std::tuple_size<Tuple>::value-1>(t);
-}
-
-template <class... Args>
-std::ostream& operator<<(std::ostream& out, const std::tuple<Args...>& t) {
-    out << '(';
-    stream_tuple(out, t, int_<sizeof...(Args)>());
-    return out << ')';
-}
-
-
-template <typename First, typename... Rest>
-    auto extended_tuple(std::tuple<Rest...> tup, First x) {
-    return std::tuple_cat(tup, std::make_tuple(x));
-}
-
-template <typename T>
-auto extended_tuple(std::tuple<T> t) {
-    return t;
-}
-
-template<class Res, typename T>
-T getValue(Res* res, int_<1>) {
-    
-}
-
-template< class Res, size_t Pos, class... Args>
-    getValue< type_list<Args...>::type<Pos> >(res)
-
-template < typename... Args, class Res>
-std::tuple<Args...> extract_values(Res* res){
-    std::tuple<Args...> tup;
-    auto x = std::get< std::tuple_size<Tuple>::value - Pos >(t);
-    getValue(x, res, int_<Pos>());
-
-}
-
-template <typename... Args, typename R>
+template <typename R, typename... Args>
 struct Row {
   int index = 0;
   std::tuple<Args...> data;
@@ -120,23 +23,25 @@ class DatabaseTable {
  DatabaseTable(std::string tablename) : _name(tablename) {}
 
   int nrow() {return _data.size()};
-  static constexpr int ncol() {return std::tuple_size<std::tuple<RowType> >::value;}
+  static constexpr int ncol() {return std::tuple_size<RowType>::value;}
 
   RowType read(R* res) {
       RowType tup;
-      //set(res, tup, 1, int_<sizeof...(Args)>());
       set(res, tup, 1, int_<0>());
+      return tup;
   }
 
   template<size_t IDX>
-  void set(R* res, RowType& tup, int idx, int_<IDX>) {
-      std::get<IDX>(tup) = get<type_list<Args...>::type<IDX> (res, idx);
+      void set(R* res, RowType& tup, int idx, int_<IDX>()) {
+      //std::get<IDX>(tup) = get<type_list<Args...>::type<IDX> (res, idx);
+      std::get<IDX>(tup) = _args.get(res, int_<IDX>());
       set(res, tup, idx + 1, int_<IDX + 1>());
   }
 
   template<>
-  void set(R* res, RowType& tup, int idx, RowSize::decr > ) {
-      std::get<1>(tup) = get<type_list<Args...>::type<sizeof...(Args)-1> (res, idx);
+  void set(R* res, RowType& tup, int idx, RowSize::decr()) {
+      //std::get<1>(tup) = get<type_list<Args...>::type<sizeof...(Args)-1> (res, idx);
+      std::get<0>(tup) = _args.get(res, int_<sizeof...(Args) - 1> );
   }
 
   template<typename T>
@@ -149,6 +54,7 @@ class DatabaseTable {
   const std::string _name;
   std::vector<RowType> _data;
 
+  ValueType<Args...> _args();
   template<typename T>
   struct get_dispatcher;
 };

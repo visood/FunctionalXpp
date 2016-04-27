@@ -59,15 +59,25 @@ StrRdbRow(std::vector<std::string> row) : _data(row) {}
   uint size() const { return (uint) _data.size();}
   void check_index(uint index) const {
     if (index > (uint) _data.size())
-      throw std::invalid_argument("requested index " +
-                                  DataType::convert<std::string, uint>(index) +
-                                  " is larger than row size " +
-                                  DataType::convert<std::string, uint>((uint) _data.size()));
+      throw std::invalid_argument (
+          "requested index " +
+          DataType::convert<std::string, uint>(index) +
+          " is larger than row size " +
+          DataType::convert<std::string, uint>((uint) _data.size()) );
   }
 
-  std::string getString(uint index) const { check_index(index); return _data[index - 1];}
-  double getDouble(uint index) const { check_index(index); return DataType::convert<double, std::string>(_data[index - 1]);}
-  int getInt(uint index) const { check_index(index); return  DataType::convert<int, std::string>(_data[index - 1]);}
+  std::string getString(uint index) const {
+      check_index(index);
+      return _data[index - 1];
+  }
+  double getDouble(uint index) const {
+      check_index(index);
+      return DataType::convert<double, std::string>(_data[index - 1]);
+  }
+  int getInt(uint index) const {
+      check_index(index);
+      return  DataType::convert<int, std::string>(_data[index - 1]);
+  }
 
   void print() {
     for (auto f: _data)
@@ -99,30 +109,31 @@ Header<Args...> header(Args... names) {
 }
 
 class StrRowRdbTable {
+    using RowType = std::vector<std::string>;
  public:
 StrRowRdbTable(uint ncol) : _ncol(ncol), _nrow(0) {}
-StrRowRdbTable(uint ncol, const std::vector< std::vector<std::string> >& table) : _ncol(ncol), _nrow((uint) table.size()) {
-    for (auto row: table) {
-      insert(row);
+StrRowRdbTable(uint ncol, const std::vector<RowType>& table) :
+    _ncol(ncol), _nrow((uint) table.size()) {
+        for (auto row: table) {
+            insert(row);
+        }
     }
-  }
 
   template<typename Sized>
   void check_row_size(const Sized& v) const {
     if (v.size() != _ncol)
-      throw std::invalid_argument("A row of " + DataType::convert<std::string, int>(_ncol) +
-                                  " cannot be extracted from a vector of length " +
-                                  DataType::convert<std::string, int>(v.size()));
+      throw std::invalid_argument(
+          "A row of " + DataType::convert<std::string, int>(_ncol) +
+          " cannot be extracted from a vector of length " +
+          DataType::convert<std::string, int>(v.size()));
   }
 
   uint size() const { return (uint) _data.size();}
   uint position() const { return _position;}
-  void insert(std::vector<std::string> row) {
-    push_back( StrRdbRow(row));
-  }
-  void insert(StrRdbRow row) {
-    push_back( StrRdbRow(row));
-  }
+
+  void insert(StrRdbRow row) { push_back(row); }
+  void insert(RowType row) { push_back( StrRdbRow(row)); }
+
   void load(const std::vector<std::vector<std::string> >& table) {
       for (auto row: table) insert(row);
   }
@@ -136,9 +147,15 @@ StrRowRdbTable(uint ncol, const std::vector< std::vector<std::string> >& table) 
     return this;
   }
 
-  std::string getString(const uint index) const {  return _data[_position - 1].getString(index);}
-  double getDouble(const uint index) const {  return _data[_position - 1].getDouble(index);}
-  int getInt(const uint index) const {  return  _data[_position - 1].getInt(index);}
+  std::string getString(const uint index) const {
+      return _data[_position - 1].getString(index);
+  }
+  double getDouble(const uint index) const {
+      return _data[_position - 1].getDouble(index);
+  }
+  int getInt(const uint index) const {
+      return  _data[_position - 1].getInt(index);
+  }
 
   void printCurrent() {
     _data[_position - 1].print();
@@ -154,7 +171,8 @@ template <typename... Args>
 class NamedStrRowRdbTable : public StrRowRdbTable {
     using string = std::string;
 public:
-NamedStrRowRdbTable(Args... hdrnames): StrRowRdbTable(std::tuple_size< std::tuple<Args...> >::value),
+NamedStrRowRdbTable(Args... hdrnames):
+    StrRowRdbTable(std::tuple_size< std::tuple<Args...> >::value),
         _header(hdrnames...), _columnIndex(tupindexes(hdrnames...)) {}
 
 
@@ -186,9 +204,15 @@ public:
 NamedTable(Args... hdrnames, const Table& table): _table(table), 
         _header(hdrnames...), _columnIndex(tupindexes(hdrnames...)) {}
 
-    string getString(string clm) const { return _table.getString(_columnIndex.at(clm));}
-    double getDouble(string clm) const { return _table.getDouble(_columnIndex.at(clm));}
-    int getInt(string clm) const { return _table.getInt(_columnIndex.at(clm));}
+    string getString(string clm) const {
+        return _table.getString(_columnIndex.at(clm));
+    }
+    double getDouble(string clm) const {
+        return _table.getDouble(_columnIndex.at(clm));
+    }
+    int getInt(string clm) const {
+        return _table.getInt(_columnIndex.at(clm));
+    }
 private:
     Header<Args...> _header;
     const std::unordered_map<std::string, uint> _columnIndex;
@@ -201,7 +225,7 @@ NamedTable<Args...> namedTable(Args... clms, const Table& table) {
 }
 
 template <typename... Args, class Table>
-    NamedTable<Args..., Table>* ptrNamedTable(Args... clms, const Table& table) {
+NamedTable<Args..., Table>* ptrNamedTable(Args... clms, const Table& table) {
     return new NamedTable<Args...>(clms..., table);
 }
 

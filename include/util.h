@@ -11,8 +11,10 @@
 
 
 std::string wordyOneToNine(uint x) {
-  if (x > 9) throw std::invalid_argument("wordyOneToNine cannot wordify number larger than 9");
-  if (x == 0) throw std::invalid_argument("wordyOneToNine cannot wordify 0");
+  if (x > 9) throw std::invalid_argument(
+      "wordyOneToNine cannot wordify number larger than 9");
+  if (x == 0) throw std::invalid_argument(
+      "wordyOneToNine cannot wordify 0");
   switch (x) {
   case 9:
     return "nine";
@@ -39,7 +41,8 @@ std::string wordyOneToNine(uint x) {
 }
 
 std::string wordyInteger(uint x) {
-  if (x > 1000) throw std::invalid_argument("wordInteger cannot wordify numbers that are larger than 1000");
+  if (x > 1000) throw std::invalid_argument(
+      "wordInteger cannot wordify numbers that are larger than 1000");
   std::string wordy;
   if (x > 100) wordy = wordyOneToNine(x/100) + " hundred";
   if (x > 100 and x % 100 > 0)  wordy += " and ";
@@ -132,7 +135,7 @@ std::string strtup(const Tuple& t, int_<1>, const char delim = ",") {
 }
 
 
-//from a header of tuples we can create a map from the tuple elements to their tuple index
+//for a tuple header we can create a map from the tuple elements to their index
 template <class Tuple, size_t Pos>
 std::unordered_map<std::string, uint> tupindexes(const Tuple& t, int_<Pos>) {
     auto map1 = tupindexes(t, int_<Pos-1>());
@@ -152,3 +155,101 @@ std::unordered_map<std::string, uint> tupindexes(Args... names) {
     auto tup = std::make_tuple(names...);
     return tupindexes(tup, int_<sizeof...(Args)>());
 }
+
+//use templates to switch on desired return types
+
+template<typename T>
+struct switch_value {};
+
+template <>
+struct switch_value<int>
+{
+    enum class {value = 1};
+};
+
+template <>
+struct switch_value<double>
+{
+    enum class {value = 2};
+};
+
+template <>
+struct switch_value<std::string>
+{
+    enum class {value = 3};
+};
+
+template <typename T, typename R>
+T get (R* res, ind idx)
+{
+    switch (switch_value<T>::value)
+    {
+    case 1:
+        return res->getInt(idx);
+    case 2:
+        return res->getDouble(idx);
+    case 3:
+        return res->getString(idx);
+    }
+}
+
+//to obtain the types in a tuple
+template<class... Args>
+struct type_list
+{
+    template <std::size_t N>
+    using type = typename std::tuple_element<N, std::tuple<Args...> >::type;
+};
+
+//template< class Res, size_t IDX, typename... Args>
+
+template<typename... Args>
+struct ValueType {
+    using T = type_list<Args...>;
+    template<class Res, size_t IDX>
+    T::type<IDX> get(Res* res, int_<IDX>()) {
+        switch (switch_value<T>::value)
+        {
+        case 1:
+            return res->getInt(IDX);
+        case 2:
+            return res->getDouble(IDX);
+        case 3:
+            return res->getString(IDX);
+        }
+    }
+};
+
+//stream the contents of a tuple
+template <class Tuple, size_t Pos>
+    std::ostream& stream_tuple(std::ostream& out, const Tuple& t, int_<Pos> ) {
+    out << std::get< std::tuple_size<Tuple>::value-Pos >(t) << ',';
+    return stream_tuple(out, t, int_<Pos-1>());
+}
+
+template <class Tuple>
+std::ostream& stream_tuple(std::ostream& out, const Tuple& t, int_<1> ) {
+    return out << std::get<std::tuple_size<Tuple>::value-1>(t);
+}
+
+template <class... Args>
+std::ostream& operator<<(std::ostream& out, const std::tuple<Args...>& t) {
+    out << '(';
+    stream_tuple(out, t, int_<sizeof...(Args)>());
+    return out << ')';
+}
+
+template <typename First, typename... Rest>
+    auto extended_tuple(std::tuple<Rest...> tup, First x) {
+    return std::tuple_cat(tup, std::make_tuple(x));
+}
+
+template <typename T>
+auto extended_tuple(std::tuple<T> t) {
+    return t;
+}
+
+
+
+
+//another, more idiomatic way to obtain the types in tuple
