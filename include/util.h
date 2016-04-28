@@ -113,9 +113,16 @@ std::string wordyInteger(uint x) {
 
 //a type that holds an unsigned integer value
 template<std::size_t N>
-struct int_{
-    using decr = int_<N-1>;
-    using incr = int_<N+1>;
+struct int_{};
+
+template<std::size_t N>
+struct decr_{
+  using type = typename int_<N-1>::type;
+};
+
+template<std::size_t N>
+struct incr_{
+  using type = typename int_<N+1>::type;
 };
 
 template <class Tuple, size_t Pos>
@@ -159,39 +166,25 @@ std::unordered_map<std::string, uint> tupindexes(Args... names) {
 //use templates to switch on desired return types
 
 template<typename T>
-struct switch_value {};
+struct dispatch_value {};
 
 template <>
-struct switch_value<int>
+struct dispatch_value<int>
 {
-    enum class {value = 1};
+    enum {value = 1};
 };
 
 template <>
-struct switch_value<double>
+struct dispatch_value<double>
 {
-    enum class {value = 2};
+    enum {value = 2};
 };
 
 template <>
-struct switch_value<std::string>
+struct dispatch_value<std::string>
 {
-    enum class {value = 3};
+    enum {value = 3};
 };
-
-template <typename T, typename R>
-T get (R* res, ind idx)
-{
-    switch (switch_value<T>::value)
-    {
-    case 1:
-        return res->getInt(idx);
-    case 2:
-        return res->getDouble(idx);
-    case 3:
-        return res->getString(idx);
-    }
-}
 
 //to obtain the types in a tuple
 template<class... Args>
@@ -201,23 +194,80 @@ struct type_list
     using type = typename std::tuple_element<N, std::tuple<Args...> >::type;
 };
 
-//template< class Res, size_t IDX, typename... Args>
+template <typename T>
+struct _type_{};
+
+template<typename... Args>
+struct ArgPack {
+  template <std::size_t N>
+  using type = typename std::tuple_element<N, std::tuple<Args...> >::type;
+
+  template <class ResType>
+  static int getValue(ResType* res, int idx, _type_<int>()) {
+    return res->getInt32(idx);
+  }
+
+  template <class ResType>
+  static double getValue(ResType* res, int idx, _type_<double>()) {
+    return res->getDouble(idx);
+  }
+
+  template <class ResType>
+  static std::string getValue(ResType* res, int idx, _type_<std::string>()) {
+    return res->getString(idx);
+  }
+
+  template <std::size_t IDX>
+  struct Element {
+    template <class ResType>
+    static type<IDX> get(ResType* res, int idx) {
+      return getValue(res, idx, _type_< type<IDX> >());
+    }
+  };
+};
+
+template<class ResType, typename... Args>
+  struct Element {
+    template< std::size_t IDX>
+    using T = typename std::tuple_element<IDX, std::tuple<Args...> >::type;
+    template< std::size_t IDX>
+    static T<IDX> get(ResType* res, uint idx) {
+      return getValue(res, idx, _type_<T<IDX>>());
+    }
+  };
+
+template<class ResType>
+static int getValue(ResType* res, uint idx, _type_<int>()) {
+  return res->getInt32(idx);
+}
+
+template<class ResType>
+static double getValue(ResType* res, uint idx, _type_<double>()) {
+  return res->getDouble(idx);
+}
+
+template<class ResType>
+static std::string getValue(ResType* res, uint idx, _type_<std::string>()) {
+  return res->getString(idx);
+}
 
 template<typename... Args>
 struct ValueType {
-    using T = type_list<Args...>;
-    template<class Res, size_t IDX>
-    T::type<IDX> get(Res* res, int_<IDX>()) {
-        switch (switch_value<T>::value)
-        {
-        case 1:
-            return res->getInt(IDX);
-        case 2:
-            return res->getDouble(IDX);
-        case 3:
-            return res->getString(IDX);
-        }
+  template <std::size_t N>
+  using type = typename std::tuple_element<N, std::tuple<Args...> >::type;
+
+  template<class Res, size_t IDX>
+  type<IDX> get(Res* res, int idx, int_<IDX>()) {
+    switch (dispatch_value< type<IDX> >::value)
+    {
+    case 1:
+      return res->getInt(idx);
+    case 2:
+      return res->getDouble(idx);
+    case 3:
+      return res->getString(idx);
     }
+  }
 };
 
 //stream the contents of a tuple

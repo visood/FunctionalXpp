@@ -3,7 +3,8 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 //#include "FunctionalXpp.h"
-#include "RelationalDatabaseSim.h"
+//#include "RelationalDatabaseSim.h"
+#include "DatabaseTable.h"
 
 
 TEST_CASE("numbers can be converted to words", "[Wordify]") {

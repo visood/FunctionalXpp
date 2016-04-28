@@ -4,7 +4,7 @@
 #include <tuple>
 #include "catch.hpp"
 #include <string>
-#include "RelationalDataBaseSim.h"
+#include "RelationalDatabaseSim.h"
 
 
 
@@ -12,7 +12,7 @@ template <typename R, typename... Args>
 struct Row {
   int index = 0;
   std::tuple<Args...> data;
-}
+};
 
 template <typename... Args>
 class DatabaseTable {
@@ -22,31 +22,58 @@ class DatabaseTable {
  public:
  DatabaseTable(std::string tablename) : _name(tablename) {}
 
-  int nrow() {return _data.size()};
+  int nrow() {return _data.size(); }
   static constexpr int ncol() {return std::tuple_size<RowType>::value;}
 
-  RowType read(R* res) {
+#if 0
+  {
+  template<class ResType>
+  RowType read(ResType* res) {
       RowType tup;
       set(res, tup, 1, int_<0>());
       return tup;
   }
 
   template<size_t IDX>
-      void set(R* res, RowType& tup, int idx, int_<IDX>()) {
+  void set(ResType* res, RowType& tup, int idx, int_<IDX>()) {
       //std::get<IDX>(tup) = get<type_list<Args...>::type<IDX> (res, idx);
-      std::get<IDX>(tup) = _args.get(res, int_<IDX>());
-      set(res, tup, idx + 1, int_<IDX + 1>());
+    std::get<IDX>(tup) = _vtArgs.get(res, idx, int_<IDX>());
+    set(res, tup, idx + 1, int_<IDX + 1>());
   }
 
   template<>
-  void set(R* res, RowType& tup, int idx, RowSize::decr()) {
+  void set(ResType* res, RowType& tup, int idx, RowSize::decr()) {
       //std::get<1>(tup) = get<type_list<Args...>::type<sizeof...(Args)-1> (res, idx);
-      std::get<0>(tup) = _args.get(res, int_<sizeof...(Args) - 1> );
+    std::get<0>(tup) = _vtArgs.get(res, idx, int_<sizeof...(Args) - 1> );
   }
 
   template<typename T>
+  struct DataType;
+  template<typename T>
   T get(R* res, std::size_t const idx) {
-      return DatabaseTable::get_dispatcher<T>::impl(res, idx);
+      return DataType<T>(res, idx);
+  }
+}
+#endif
+
+  template <class ResType>
+  RowType read(ResType* res) {
+    return read(res, 1, int_<0>());
+  }
+
+  template <class ResType, size_t IDX>
+  RowType read(ResType* res, int idx, int_<IDX>()) {
+    //ArgPack<Args...>::type<IDX> x = ArgPack<Args...>::Element<IDX>::get(res, idx);
+    auto x = Element<ResType, Args...>::get<IDX>(res, idx);
+    auto tup = read(res, idx + 1, int_<IDX>::incr());
+    return std::tuple_cat(std::make_tuple(x), tup);
+  }
+
+  template <class ResType>
+    RowType read(ResType* res, int idx, int_<sizeof...(Args) - 1>()) {
+    auto x = Element<ResType, Args...>::get<sizeof...(Args) - 1>(res, idx);
+    return std::make_tuple(x);
+    //return std::make_tuple(Element<ResType>::getValue<IDX>(res, idx));
   }
 
 
@@ -54,28 +81,33 @@ class DatabaseTable {
   const std::string _name;
   std::vector<RowType> _data;
 
-  ValueType<Args...> _args();
-  template<typename T>
-  struct get_dispatcher;
+  //ArgPack<Args...> _argpack;
+
+  // ValueType<Args...> _vtArgs();
 };
 
+
+
+/*
 template<typename R>
-struct DatabaseTable::get_dispatcher<int> {
-    static int impl(R* res, std::size_t const idx) {
+struct DatabaseTable::DataType<int> {
+  static int operator()(R* res, std::size_t const idx) {
         return res->getInt32(idx);
-    }
+  }
 };
 
 template<typename R>
-struct DatabaseTable::get_dispatcher<double> {
-    static double impl(R* res, std::size_t const idx) {
+struct DatabaseTable::DataType<double> {
+  static double operator()(R* res, std::size_t const idx) {
         return res->getDouble(idx);
-    }
+  }
 };
 
 template<typename R>
-struct DatabaseTable::get_dispatcher<std::string> {
-    static std::string impl(R* res, std::size_t const idx) {
+struct DatabaseTable::DataType<std::string> {
+  static std::string operator()(R* res, std::size_t const idx) {
         return res->getString(idx);
-    }
+  }
 };
+
+*/
