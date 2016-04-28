@@ -227,8 +227,8 @@ TEST_CASE("Extract values from ResType, typed by a parameter pack", "[ParameterP
     uint i = 0;
 
     while(res->next()){
-      auto tup = getTuple<StrRowRdbTable*, double, int, std::string>(res);
-      std::cout << std::get<0>(tup) << ", " << std::get<1>(tup) << ", " << std::get<2>(tup) << std::endl;
+      auto tup = getTuple<StrRowRdbTable*, double, int, std::string>(res, 0);
+      //std::cout << std::get<0>(tup) << ", " << std::get<1>(tup) << ", " << std::get<2>(tup) << std::endl;
       REQUIRE( std::get<0>(tup) == (double) i);
       REQUIRE( std::get<1>(tup) == (int) i);
       REQUIRE( std::get<2>(tup) == wordyInteger(i));

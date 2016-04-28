@@ -74,7 +74,6 @@ class DatabaseTable {
     return std::make_tuple(x);
   }
 
-  
  private:
   const std::string _name;
   std::vector<RowType> _data;

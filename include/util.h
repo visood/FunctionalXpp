@@ -204,77 +204,43 @@ struct ArgPack {
 
   template <class ResType>
   static int getValue(ResType res, int idx, _type_<int>) {
-    std::cout << "getInt(" << idx + 1 << ")"
-              << res->getInt(idx + 1) << std::endl;
+    //std::cout << "getInt(" << idx + 1 << ")"
+    //<< res->getInt(idx + 1) << std::endl;
     return res->getInt(idx + 1);
   }
 
   template <class ResType>
   static double getValue(ResType res, int idx, _type_<double>) {
-    std::cout << "getDouble(" << idx + 1 << ")"
-              << res->getDouble(idx + 1) << std::endl;
+    //std::cout << "getDouble(" << idx + 1 << ")"
+    //<< res->getDouble(idx + 1) << std::endl;
     return res->getDouble(idx + 1);
   }
 
   template <class ResType>
   static std::string getValue(ResType res, int idx, _type_<std::string>) {
-    std::cout << "getString(" << idx + 1 << ")"
-              << res->getString(idx + 1) << std::endl;
+    //std::cout << "getString(" << idx + 1 << ")"
+    //<< res->getString(idx + 1) << std::endl;
     return res->getString(idx + 1);
   }
 
   template <class ResType, std::size_t IDX>
     static type<IDX> Element(ResType res, int_<IDX>) {
-    std::cout << "Element(" << IDX << ")"
-              << getValue(res, IDX, _type_< type<IDX> >()) << std::endl;
+    //std::cout << "Element(" << IDX << ")"
+    //<< getValue(res, IDX, _type_< type<IDX> >()) << std::endl;
     return getValue(res, IDX, _type_< type<IDX> >());
   }
-  /*
-  template <class ResType >
-  static type<0> Element(ResType res, int_<0>) {
-    return getValue(res, 0, _type_< type<0> >());
-  }
-  */
-  /*
-  template <std::size_t IDX>
-  struct Element {
-    template <class ResType>
-    type<IDX> operator()(ResType res, int idx) {
-      return getValue(res, idx, _type_< type<IDX> >());
-    }
-    template <class ResType>
-    type<IDX> operator()(ResType res) {
-      return getValue(res, IDX, _type_< type<IDX> >());
-    }
-  };
-  */
 };
 
-/*
-template<class ResType>
-  struct TupleValues {
-    template<typename First, typename... Rest>
-    static std::tuple<First, Rest...> get(ResType res) {
-      auto x = ArgPack<First>::Element(res, int_<0>());
-      auto tup = TupleValues<ResType>::get<Rest...>(res);
-      return std::tuple_cat( std::make_tuple(x), tup);
-    }
 
-    template<>
-    static std::tuple<> get(ResType res) {
-      return std::tuple<>();
-    }
-  };
-*/
 
 template<class ResType, typename First, typename... Rest>
-static std::tuple<First, Rest...> getTuple(ResType res) {
-  auto x = ArgPack<First>::Element(res, int_<0>());
-  auto tup = getTuple<ResType, Rest...>(res);
+static std::tuple<First, Rest...> getTuple(ResType res, int offset) {
+  auto x = ArgPack<>::getValue(res, offset, _type_<First>());
+  auto tup = getTuple<ResType, Rest...>(res, offset + 1);
   return std::tuple_cat( std::make_tuple(x), tup);
 }
 template<class ResType>
-static std::tuple<> getTuple(ResType) {
+static std::tuple<> getTuple(ResType, int) {
   return std::tuple<>();
 }
 
