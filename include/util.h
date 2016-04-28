@@ -203,53 +203,38 @@ struct ArgPack {
   using type = typename std::tuple_element<N, std::tuple<Args...> >::type;
 
   template <class ResType>
-  static int getValue(ResType* res, int idx, _type_<int>()) {
-    return res->getInt32(idx);
+  static int getValue(ResType res, int idx, _type_<int>) {
+    return res->getInt(idx + 1);
   }
 
   template <class ResType>
-  static double getValue(ResType* res, int idx, _type_<double>()) {
-    return res->getDouble(idx);
+  static double getValue(ResType res, int idx, _type_<double>) {
+    return res->getDouble(idx + 1);
   }
 
   template <class ResType>
-  static std::string getValue(ResType* res, int idx, _type_<std::string>()) {
-    return res->getString(idx);
+  static std::string getValue(ResType res, int idx, _type_<std::string>) {
+    return res->getString(idx + 1);
   }
 
+  template <class ResType, std::size_t IDX>
+    static type<IDX> Element(ResType res, int_<IDX>) {
+    return getValue(res, IDX, _type_< type<IDX> >());
+  }
+  /*
   template <std::size_t IDX>
   struct Element {
     template <class ResType>
-    static type<IDX> get(ResType* res, int idx) {
+    type<IDX> operator()(ResType res, int idx) {
       return getValue(res, idx, _type_< type<IDX> >());
     }
-  };
-};
-
-template<class ResType, typename... Args>
-  struct Element {
-    template< std::size_t IDX>
-    using T = typename std::tuple_element<IDX, std::tuple<Args...> >::type;
-    template< std::size_t IDX>
-    static T<IDX> get(ResType* res, uint idx) {
-      return getValue(res, idx, _type_<T<IDX>>());
+    template <class ResType>
+    type<IDX> operator()(ResType res) {
+      return getValue(res, IDX, _type_< type<IDX> >());
     }
   };
-
-template<class ResType>
-static int getValue(ResType* res, uint idx, _type_<int>()) {
-  return res->getInt32(idx);
-}
-
-template<class ResType>
-static double getValue(ResType* res, uint idx, _type_<double>()) {
-  return res->getDouble(idx);
-}
-
-template<class ResType>
-static std::string getValue(ResType* res, uint idx, _type_<std::string>()) {
-  return res->getString(idx);
-}
+  */
+};
 
 template<typename... Args>
 struct ValueType {
@@ -257,7 +242,7 @@ struct ValueType {
   using type = typename std::tuple_element<N, std::tuple<Args...> >::type;
 
   template<class Res, size_t IDX>
-  type<IDX> get(Res* res, int idx, int_<IDX>()) {
+  type<IDX> get(Res* res, int idx, int_<IDX>) {
     switch (dispatch_value< type<IDX> >::value)
     {
     case 1:

@@ -128,7 +128,7 @@ TEST_CASE("Header containing a tuple of column names", "[tableHeader]") {
 TEST_CASE("An index map for names in a header", "[headerIndexMap]") {
     auto idxmap = tupindexes("first", "second", "third");
     REQUIRE ( (idxmap.size() == 3 and
-               (idxmap["first"] == 0) and 
+               (idxmap["first"] == 0) and
                (idxmap["second"] == 1) and
                (idxmap["third"] = 2) )
         );
@@ -164,3 +164,79 @@ TEST_CASE("Simulate a Relational Database Table with column names", "[RDBSim], [
 
     delete res;
 }
+
+TEST_CASE("Dispatch on a tuple type", "[TupleDispatch]") {
+    using string = std::string;
+    std::vector<std::vector<string> > table;
+    for (uint i = 0; i != 100; ++i) {
+        std::vector<string> row{ DataType::convert<string, double>((double) i),
+                DataType::convert<string, uint>(i),
+                wordyInteger(i)};
+        table.push_back(row);
+    }
+
+    //StrRowRdbTable* res = new StrRowRdbTable(3, table);
+    //NamedStrRowRdbTable<string, string, string>* res = new NamedStrRowRdbTable<string, string, string>("first", "second", "third");
+
+    StrRowRdbTable* res = new StrRowRdbTable(3, table);
+    std::cout << "obtained a pointer to a db table sim" << std::endl;
+    REQUIRE( res );
+
+
+    REQUIRE( res->size() == (uint) table.size());
+    /*
+    uint i = 0;
+    while (res->next()) {
+        REQUIRE( res->getDouble(1) == (double) i);
+        REQUIRE( res->getInt(2) == (int) i);
+        REQUIRE( res->getString(3) == wordyInteger(i));
+        i += 1;
+    }
+    */
+
+    int i = 0;
+    while (res->next()) {
+      REQUIRE( (ArgPack<double, int, std::string>::Element(res, int_<0>()) == (double) i));
+      REQUIRE( (ArgPack<double, int, std::string>::Element(res, int_<1>()) == (int) i));
+      REQUIRE( (ArgPack<double, int, std::string>::Element(res, int_<2>()) == wordyInteger(i)));
+      i += 1;
+    }
+
+    delete res;
+}
+
+/*
+TEST_CASE("Simulate a Database Table", "[DataTable]") {
+    using string = std::string;
+    std::vector<std::vector<string> > table;
+    for (uint i = 0; i != 100; ++i) {
+        std::vector<string> row{ DataType::convert<string, double>((double) i),
+                DataType::convert<string, uint>(i),
+                wordyInteger(i)};
+        table.push_back(row);
+    }
+
+    //StrRowRdbTable* res = new StrRowRdbTable(3, table);
+    //NamedStrRowRdbTable<string, string, string>* res = new NamedStrRowRdbTable<string, string, string>("first", "second", "third");
+
+    StrRowRdbTable* res = new StrRowRdbTable(3, table);
+    std::cout << "obtained a pointer to a db table sim" << std::endl;
+    REQUIRE( res );
+
+
+    REQUIRE( res->size() == (uint) table.size());
+    uint i = 0;
+    while (res->next()) {
+        REQUIRE( res->getDouble(1) == (double) i);
+        REQUIRE( res->getInt(2) == (int) i);
+        REQUIRE( res->getString(3) == wordyInteger(i));
+        i += 1;
+    }
+
+    auto dbt = DatabaseTable<double, int, std::string>("test");
+
+    dbt.read(res);
+
+    delete res;
+}
+*/
