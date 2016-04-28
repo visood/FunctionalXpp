@@ -31,13 +31,6 @@ TEST_CASE ("Tuples can be printed", "[printTuples]") {
     std::cout << std::get<0> (t1) << ", " << std::get<1>(t1) << ", " << std::get<2>(t1) << std::endl;
 }
 
-/*
-TEST_CASE ("DataTypes are available", "[datatypes]") {
-    REQUIRE (DoubleType);
-    REQUIRE (StringType);
-    REQUIRE (IntegerType);
-}
-*/
 TEST_CASE ("Values of a certain type can be obtained from a string", "[DataTypes]") {
     double xdouble;
     int xint;
@@ -184,16 +177,6 @@ TEST_CASE("Dispatch on a tuple type", "[TupleDispatch]") {
 
 
     REQUIRE( res->size() == (uint) table.size());
-    /*
-    uint i = 0;
-    while (res->next()) {
-        REQUIRE( res->getDouble(1) == (double) i);
-        REQUIRE( res->getInt(2) == (int) i);
-        REQUIRE( res->getString(3) == wordyInteger(i));
-        i += 1;
-    }
-    */
-
     int i = 0;
     while (res->next()) {
       REQUIRE( (ArgPack<double, int, std::string>::Element(res, int_<0>()) == (double) i));
@@ -227,8 +210,40 @@ TEST_CASE("Extract values from ResType, typed by a parameter pack", "[ParameterP
     uint i = 0;
 
     while(res->next()){
-      auto tup = getTuple<StrRowRdbTable*, double, int, std::string>(res, 0);
+      auto tup = getTupleValue<StrRowRdbTable*, double, int, std::string>(res, 0);
       //std::cout << std::get<0>(tup) << ", " << std::get<1>(tup) << ", " << std::get<2>(tup) << std::endl;
+      REQUIRE( std::get<0>(tup) == (double) i);
+      REQUIRE( std::get<1>(tup) == (int) i);
+      REQUIRE( std::get<2>(tup) == wordyInteger(i));
+      i += 1;
+    }
+
+
+    delete res;
+}
+
+TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
+    using string = std::string;
+    std::vector<std::vector<string> > table;
+    for (uint i = 0; i != 100; ++i) {
+        std::vector<string> row{ DataType::convert<string, double>((double) i),
+                DataType::convert<string, uint>(i),
+                wordyInteger(i)};
+        table.push_back(row);
+    }
+
+    StrRowRdbTable* res = new StrRowRdbTable(3, table);
+    std::cout << "obtained a pointer to a db table sim" << std::endl;
+    REQUIRE( res );
+
+
+    REQUIRE( res->size() == (uint) table.size());
+    uint i = 0;
+
+    DatabaseTable< double, int, std::string > dbt("test");
+
+    while(res->next()){
+      auto tup = dbt.read(res);
       REQUIRE( std::get<0>(tup) == (double) i);
       REQUIRE( std::get<1>(tup) == (int) i);
       REQUIRE( std::get<2>(tup) == wordyInteger(i));

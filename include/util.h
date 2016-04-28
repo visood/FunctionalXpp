@@ -234,13 +234,13 @@ struct ArgPack {
 
 
 template<class ResType, typename First, typename... Rest>
-static std::tuple<First, Rest...> getTuple(ResType res, int offset) {
+static std::tuple<First, Rest...> getTupleValue(ResType res, int offset) {
   auto x = ArgPack<>::getValue(res, offset, _type_<First>());
-  auto tup = getTuple<ResType, Rest...>(res, offset + 1);
+  auto tup = getTupleValue<ResType, Rest...>(res, offset + 1);
   return std::tuple_cat( std::make_tuple(x), tup);
 }
 template<class ResType>
-static std::tuple<> getTuple(ResType, int) {
+static std::tuple<> getTupleValue(ResType, int) {
   return std::tuple<>();
 }
 
