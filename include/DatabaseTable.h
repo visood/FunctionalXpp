@@ -56,36 +56,25 @@ class DatabaseTable {
 
   template <class ResType>
   RowType read(ResType const res) {
-    return readIdx<ResType>(res, int_<sizeof...(Args)>());
+    //return readIdx<ResType>(res, int_<sizeof...(Args)>());
+    return readIdx(res, int_<0>());
   }
   template <class ResType, std::size_t IDX>
     RowType readIdx(ResType const res, int_<IDX>) {
-    auto x = ArgPack<Args...>::Element(res, int_<std::tuple_size<RowType>::value - IDX >());
-    auto tup = readIdx(res, int_<IDX - 1>());
+    //auto x = ArgPack<Args...>::Element(res, int_<std::tuple_size<RowType>::value - IDX >());
+    //auto tup = readIdx(res, int_<IDX - 1>());
+    auto x = ArgPack<Args...>::Element(res, int_<IDX>());
+    auto tup = readIdx(res, int_<IDX + 1>());
     return std::tuple_cat(std::make_tuple(x), tup);
   }
   template <class ResType>
-    RowType readIdx(ResType const res, int_<1>) {
-    auto x = ArgPack<Args...>::Element(res, int_<std::tuple_size<RowType>::value - 1 >());
+    RowType readIdx(ResType const res, int_<sizeof...(Args) - 1>) {
+    //auto x = ArgPack<Args...>::Element(res, int_<std::tuple_size<RowType>::value - 1 >());
+    auto x = ArgPack<Args...>::Element(res, int_<sizeof...(Args) - 1>());
     return std::make_tuple(x);
   }
 
-  /*
-  template <class ResType, size_t IDX>
-  RowType readIdx(ResType const res, int idx, int_<IDX>()) {
-    auto x = ArgPack<Args...>::Element<IDX>(res, idx);
-    auto tup = read(res, idx + 1, int_<IDX>::incr());
-    return std::tuple_cat(std::make_tuple(x), tup);
-  }
-
-  template <class ResType>
-  RowType readIdx(ResType const res, int idx, int_<sizeof...(Args) - 1>()) {
-    auto x = ArgPack<Args...>::Element<sizeof...(Args)-1>(res);
-    return std::make_tuple(x);
-  }
-  */
-
-
+  
  private:
   const std::string _name;
   std::vector<RowType> _data;
