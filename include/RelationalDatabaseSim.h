@@ -119,6 +119,10 @@ StrRowRdbTable(uint ncol, const std::vector<RowType>& table) :
         }
     }
 
+StrRowRdbTable(const StrRowRdbTable& st) :
+    _ncol(st.ncol()), _nrow(st.nrow()),
+      _data(st.data()), _position(0) {}
+
   template<typename Sized>
   void check_row_size(const Sized& v) const {
     if (v.size() != _ncol)
@@ -129,7 +133,10 @@ StrRowRdbTable(uint ncol, const std::vector<RowType>& table) :
   }
 
   uint size() const { return (uint) _data.size();}
+  uint ncol() const { return _ncol;}
+  uint nrow() const { return _nrow;}
   uint position() const { return _position;}
+  std::vector< StrRdbRow > const& data() const {return _data; }
 
   void insert(StrRdbRow row) { push_back(row); }
   void insert(RowType row) { push_back( StrRdbRow(row)); }
@@ -285,3 +292,155 @@ IterableRDB(ResType* res) : _start(res) {}
 private:
   ResType* _start = nullptr;
 };
+
+
+
+class DbSim {
+public:
+  DbSim() = default;
+
+  void insert(const std::string& name, const StrRowRdbTable& t) {
+    _tables.insert(std::make_pair(name, t));
+  }
+  StrRowRdbTable const* table(const std::string& name) const {return &(_tables.at(name));}
+private:
+  std::map<std::string, StrRowRdbTable> _tables;
+};
+
+class DbQuerySim;
+
+class DbconnClassSim {
+public:
+DbconnClassSim(const DbSim& db) : _db(db) {}
+DbconnClassSim(const DbconnClassSim& dbc) : _db(dbc.db()), _queries(dbc.queries()) {}
+  //DbconnClassSim(DbconnClassSim&& dbc) noexcept : _db(dbc.db()). _queries(dbc.queries()) {}
+
+  ~DbconnClassSim() ;
+
+  const DbSim& db() const {return _db;}
+  const std::vector<DbQuerySim>& queries() const {return _queries;}
+  DbQuerySim& query() ;
+  StrRowRdbTable const* table(const std::string& name) {
+    return _db.table(name);
+  }
+private:
+  const DbSim& _db;
+  std::vector<DbQuerySim> _queries;
+};
+
+using DbconnSim = DbconnClassSim*;
+
+
+class DbQueryClassSim {
+public:
+  DbQueryClassSim() = default ;
+//DbQueryClassSim(StrRowRdbTable const* pt) : _ptrTable(pt) {}
+DbQueryClassSim(DbconnSim const& conn) : _conn(conn) {}
+  DbQueryClassSim* set(const std::string& qstr) {
+    _tableName = qstr;
+    return this;
+  }
+  std::string table() const {return _tableName;}
+  StrRowRdbTable const* execute() const {
+    return _conn->table(_tableName);
+  }
+ private:
+  std::string _tableName;
+  //StrRowRdbTable const* _ptrTable = nullptr;
+  DbconnSim const _conn = nullptr;
+};
+
+
+#if 0
+class DbQueryClassStream : public std::ostream {
+public:
+  DbQueryClassStream(DbconnSim const& conn) {
+    _dbquery = new DbQueryClassSim(conn);
+  }
+  ~DbQueryClassStream() {
+    delete _dbquery;
+  }
+
+  StrRowRdbTable const* execute() {
+    return _dbquery->execute();
+  }
+
+  template<typename T> DbQueryClassStream& operator<<(constT& os) {
+    std::stringstream ss;
+    ss << os.rdbuf();
+    _dbquery->set(ss.str());
+    return *this;
+  }
+
+private:
+    DbQueryClassSim* _dbquery = nullptr;
+};
+#endif
+
+//using DbQuerySim = DbQueryClassSim*;
+
+class DbQuerySim {
+public:
+DbQuerySim(const DbconnSim& conn) : _ptr(new DbQueryClassSim(conn)){}
+DbQuerySim(const DbQuerySim& other) : _ptr(other.ptr()) {}
+DbQuerySim(DbQuerySim&& other) : _ptr(other.ptr()) {
+    other._ptr = nullptr;
+  }
+  ~DbQuerySim() {
+    delete _ptr;
+  }
+
+  DbQuerySim& operator= (const DbQuerySim& other)
+    {
+      DbQuerySim tmp(other);
+      *this = std::move(tmp);
+      return *this;
+    }
+
+  DbQuerySim& operator= (DbQuerySim&& other) noexcept
+    {
+      delete _ptr;
+      _ptr = other.ptr();
+      other._ptr = nullptr;
+      return *this;
+    }
+
+  const DbQueryClassSim* operator->() const {return _ptr;}
+  DbQueryClassSim* ptr() const {return _ptr;}
+
+  std::string table() const { return _ptr->table();}
+
+  template<typename T> DbQuerySim& operator<<(const T& name) {
+    std::ostringstream os;
+    //ss << os.rdbuf();
+    os << name;
+    _ptr->set(os.str());
+    return *this;
+  }
+
+private:
+  DbQueryClassSim* _ptr;
+};
+/*
+DbQuerySim operator<<(DbQuerySim q, std::ostream& os) {
+  std::stringstream ss;
+  ss << os.rdbuf();
+  return q->set(ss.str());
+}
+*/
+/*
+DbQuerySim operator<<(DbQuerySim q, const char* qstr) {
+  return q->set(qstr);
+}
+*/
+DbQuerySim&
+DbconnClassSim::query() {
+  _queries.push_back(DbQuerySim(this));
+  return _queries[_queries.size() - 1];
+}
+
+DbconnClassSim::~DbconnClassSim() {
+  for (auto q: _queries) {
+    if (q.ptr()) delete q.ptr();
+  }
+}

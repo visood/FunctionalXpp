@@ -22,14 +22,29 @@ class DatabaseTable {
  public:
  DatabaseTable(std::string tablename) : _name(tablename) {}
 
-  int nrow() {return _data.size(); }
+  uint nrow() {return (uint) _data.size(); }
   static constexpr int ncol() {return std::tuple_size<RowType>::value;}
+  std::vector<RowType> const& data() {return _data;}
 
 
   template<class ResType>
   RowType read(ResType const res) {
-    return getTupleValue<ResType, Args...>(res, 0);
+    return getTupleValue<ResType, Args...>(res);
   }
+
+  template<class ResType>
+  void loadResult(ResType const res) {
+    while(res->next()) {
+      _data.push_back(read(res));
+    }
+  }
+
+  template<class QueryType>
+  void loadQuery(QueryType const query) {
+    const auto res = query->execute();
+    loadResult(res);
+  }
+
 
 private:
   const std::string _name;
