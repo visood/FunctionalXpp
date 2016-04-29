@@ -278,8 +278,8 @@ TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
       DbSim dbsim;
       dbsim.insert("table", strTable);
       DbconnClassSim conn(dbsim);
-      /*
-      DbQuerySim query = conn.query();
+      DbQuerySim& query = conn.query();
+      std::cout << "query obtained " << std::endl;
       query << "table";
       std::cout << query.table();
       StrRowRdbTable const* res = query->execute();
@@ -290,8 +290,6 @@ TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
       REQUIRE( res->size() == (uint) table.size());
       uint i = 0;
       DatabaseTable< double, int, std::string > dbt("test");
-      */
-      /*
       dbt.loadQuery(query);
       REQUIRE(dbt.nrow() == table.size());
       i = 0;
@@ -301,7 +299,6 @@ TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
         REQUIRE( std::get<2>(tup) == wordyInteger(i));
         i += 1;
       }
-      */
       //delete query;
     }
 }

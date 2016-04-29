@@ -320,6 +320,7 @@ DbconnClassSim(const DbconnClassSim& dbc) : _db(dbc.db()), _queries(dbc.queries(
   const DbSim& db() const {return _db;}
   const std::vector<DbQuerySim>& queries() const {return _queries;}
   DbQuerySim& query() ;
+  DbQuerySim& newQuery(); 
   StrRowRdbTable const* table(const std::string& name) {
     return _db.table(name);
   }
@@ -382,6 +383,7 @@ private:
 class DbQuerySim {
 public:
 DbQuerySim(const DbconnSim& conn) : _ptr(new DbQueryClassSim(conn)){}
+  /*
 DbQuerySim(const DbQuerySim& other) : _ptr(other.ptr()) {}
 DbQuerySim(DbQuerySim&& other) : _ptr(other.ptr()) {
     other._ptr = nullptr;
@@ -404,23 +406,31 @@ DbQuerySim(DbQuerySim&& other) : _ptr(other.ptr()) {
       other._ptr = nullptr;
       return *this;
     }
+  */
 
   const DbQueryClassSim* operator->() const {return _ptr;}
   DbQueryClassSim* ptr() const {return _ptr;}
 
   std::string table() const { return _ptr->table();}
 
-  template<typename T> DbQuerySim& operator<<(const T& name) {
+  template<typename T> void operator<<(const T& name) {
+    std::cout << " add table name to query " << std::endl;
     std::ostringstream os;
     //ss << os.rdbuf();
     os << name;
     _ptr->set(os.str());
-    return *this;
+    std::cout << " name set to " << _ptr->table() << std::endl;
+    //return *this;
   }
 
 private:
   DbQueryClassSim* _ptr;
 };
+
+DbQuerySim& DbconnClassSim::newQuery() {
+  _queries.push_back(DbQuerySim(this));
+  return _queries[_queries.size() - 1];
+}
 /*
 DbQuerySim operator<<(DbQuerySim q, std::ostream& os) {
   std::stringstream ss;
@@ -435,8 +445,10 @@ DbQuerySim operator<<(DbQuerySim q, const char* qstr) {
 */
 DbQuerySim&
 DbconnClassSim::query() {
-  _queries.push_back(DbQuerySim(this));
-  return _queries[_queries.size() - 1];
+  //std::cout << "add a query to the connection" << std::endl;
+  DbQuerySim& q = newQuery();
+  //std::cout << "now contains " << _queries.size() << " queries" << std::endl;
+  return q;
 }
 
 DbconnClassSim::~DbconnClassSim() {
