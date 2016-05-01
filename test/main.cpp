@@ -5,6 +5,7 @@
 //#include "FunctionalXpp.h"
 //#include "RelationalDatabaseSim.h"
 #include "DatabaseTable.h"
+#include "kmer.h"
 
 
 TEST_CASE("numbers can be converted to words", "[Wordify]") {
@@ -231,7 +232,6 @@ TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
                 wordyInteger(i)};
         table.push_back(row);
     }
-    /*
     SECTION ("read a result") {
       StrRowRdbTable* res = new StrRowRdbTable(3, table);
       std::cout << "obtained a pointer to a db table sim" << std::endl;
@@ -271,7 +271,6 @@ TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
     }
 
     std::cout << "past load from a result" << std::endl;
-    */
 
     SECTION ("load from a query") {
       StrRowRdbTable strTable = StrRowRdbTable(3, table);
@@ -282,12 +281,7 @@ TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
       std::cout << "query obtained " << std::endl;
       query << "table";
       std::cout << query.table();
-      StrRowRdbTable const* res = query->execute();
-      std::cout << "obtained a pointer to a db table sim" << std::endl;
-      if (not res)
-        std::cout << "pointer is not valid" << std::endl;
-      REQUIRE( res );
-      REQUIRE( res->size() == (uint) table.size());
+      //StrRowRdbTable const* res = query->execute();
       uint i = 0;
       DatabaseTable< double, int, std::string > dbt("test");
       dbt.loadQuery(query);
@@ -302,3 +296,58 @@ TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
       //delete query;
     }
 }
+
+TEST_CASE ("Kmer iterator can be used to iterate over the kmers in a vector", "[KmerClassIterator]") {
+  std::vector<int> xs(6);
+  std::iota(xs.begin(), xs.end(), 0);
+  Kmer< std::vector<int> > mer3(3, xs);
+  REQUIRE( mer3.size() == 4);
+  int n = 0;
+  SECTION("auto works") {
+    for( auto kmer: mer3) {
+      std::cout << "n: " << n << ", kmer: "
+                << kmer[0] << ", " << kmer[1] << ", " << kmer[2] << std::endl;
+      REQUIRE( kmer.size() == 3);
+      REQUIRE( kmer[0] == n );
+      REQUIRE( kmer[1] == n + 1);
+      REQUIRE( kmer[2] == n + 2);
+      n += 1;
+    }
+    REQUIRE( n == 4);
+  }
+
+  SECTION("accumulate") {
+    uint ssize = std::accumulate(mer3.begin(), mer3.end(), (uint) 0,
+                                 [] (const uint& s, const auto& kmer) {
+                                   return s + kmer.size();
+                                 });
+    REQUIRE(ssize == 12);
+  }
+
+  SECTION( "while done") {
+    Kmer<std::vector<int>>::iterator kitr(std::begin(xs), std::end(xs), 3);
+    kitr.start();
+    n = 0;
+    while (!kitr.done()) {
+      const auto& kmer = *kitr;
+      REQUIRE( kmer[0] == n);
+      REQUIRE( kmer[1] == n + 1);
+      REQUIRE( kmer[2] == n + 2);
+      ++kitr; ++n;
+    }
+  }
+
+  SECTION( "for_each ") {
+    Kmer<std::vector<int>>::iterator kitr(std::begin(xs), std::end(xs), 3);
+    kitr.start();
+    n = 0;
+    for_each(kitr, [&n] (const auto& kmer) {
+        REQUIRE( kmer[0] == n);
+        REQUIRE( kmer[1] == n + 1);
+        REQUIRE( kmer[2] == n + 2);
+        ++n;
+      } );
+  }
+}
+
+

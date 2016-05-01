@@ -44,7 +44,9 @@ which we begin to learn from the Waf book"
 
 
 def build(bld):
-        allIncludes = [".", "..", "../include",
+        allIncludes = [".", "..", 
+			"../include",
+			 "../include/iterators",
                        "/usr/local/include/Catch"]
         cxxflags = ["-Wall", "-Wno-unknown-pragmas",
                     "-Wextra", "-Wconversion",

@@ -320,7 +320,6 @@ DbconnClassSim(const DbconnClassSim& dbc) : _db(dbc.db()), _queries(dbc.queries(
   const DbSim& db() const {return _db;}
   const std::vector<DbQuerySim>& queries() const {return _queries;}
   DbQuerySim& query() ;
-  DbQuerySim& newQuery(); 
   StrRowRdbTable const* table(const std::string& name) {
     return _db.table(name);
   }
@@ -427,28 +426,10 @@ private:
   DbQueryClassSim* _ptr;
 };
 
-DbQuerySim& DbconnClassSim::newQuery() {
-  _queries.push_back(DbQuerySim(this));
-  return _queries[_queries.size() - 1];
-}
-/*
-DbQuerySim operator<<(DbQuerySim q, std::ostream& os) {
-  std::stringstream ss;
-  ss << os.rdbuf();
-  return q->set(ss.str());
-}
-*/
-/*
-DbQuerySim operator<<(DbQuerySim q, const char* qstr) {
-  return q->set(qstr);
-}
-*/
 DbQuerySim&
 DbconnClassSim::query() {
-  //std::cout << "add a query to the connection" << std::endl;
-  DbQuerySim& q = newQuery();
-  //std::cout << "now contains " << _queries.size() << " queries" << std::endl;
-  return q;
+  _queries.push_back(DbQuerySim(this));
+  return _queries[_queries.size() - 1];
 }
 
 DbconnClassSim::~DbconnClassSim() {

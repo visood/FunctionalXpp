@@ -295,5 +295,38 @@ auto extended_tuple(std::tuple<T> t) {
 
 
 
+template < typename T >
+T trivial() ;
 
-//another, more idiomatic way to obtain the types in tuple
+template<>
+std::string trivial() { return "";}
+template<>
+uint trivial() { return (uint) 0;}
+template<>
+int trivial() { return 0;}
+template<>
+double trivial() { return 0.0;}
+
+template < typename T >
+class Maybe {
+  virtual bool isValid() = 0;
+  virtual T get() = 0;
+};
+
+template < typename T >
+class None : public Maybe<T> {
+public:
+  bool isValid() { return false;}
+  T get() { throw std::invalid_argument("None does not contain any elements"); }
+};
+
+template < typename T >
+class Valid : public Maybe<T> {
+public:
+Valid(const T& e) : _elem(e) {}
+  bool isValid() {return true;}
+  const T get() const { return _elem; }
+private:
+  const T _elem;
+};
+
