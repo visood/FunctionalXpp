@@ -30,7 +30,7 @@ def options(opt):
 
 def configure(conf):
         from waflib.Tools.compiler_cxx import cxx_compiler
-        conf.env.CXX = "/usr/bin/g++-5" #specify the cxx compiler.
+        conf.env.CXX = "/usr/bin/g++-6" #specify the cxx compiler.
         conf.load("compiler_cxx")
         print conf.env
 	conf.check(header_name="stdio.h", features="cxx cxxprogram", mandatory=False)
