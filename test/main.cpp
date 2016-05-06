@@ -349,3 +349,14 @@ TEST_CASE ("Kmer iterator can be used to iterate over the kmers in a vector", "[
 
 
 
+
+TEST_CASE("A tower of inheritence", "[inhertower]") {
+    std::cout << "carry on" << std::endl;
+    auto tow = make_tower(1,-1.0, std::string("one"));
+    tow(2);
+    tow(-2.0);
+    tow(std::string("two"));
+}
+
+
+

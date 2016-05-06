@@ -331,3 +331,26 @@ private:
   const T _elem;
 };
 
+template<typename... As> struct Tower;
+
+template<typename A> struct Tower<A> {
+    Tower(A i) : _value(i) {}
+
+  void operator()(A a) const { std::cout << _value + a << std::endl; }
+
+    private:
+        A _value;
+};
+
+template<typename First, typename... Rest>
+struct Tower<First, Rest...> : Tower<First>, Tower<Rest...>
+{
+    using Tower<First>::operator();
+    using Tower<Rest...>::operator();
+
+    Tower(First f, Rest... rs) :
+        Tower<First>(f), Tower<Rest...>(rs...) {}
+};
+template <typename... Fs>
+Tower<Fs...> make_tower(Fs... fs) { return {fs...}; }
+
