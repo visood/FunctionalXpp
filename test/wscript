@@ -28,7 +28,6 @@ def options(opt):
 
 def configure(conf):
 	conf.load("compiler_cxx")
-	conf.check(header_name="stdio.h", features="cxx cxxprogram", mandatory=False)
 
 
 def describe(ctx):
@@ -53,8 +52,10 @@ def build(bld):
                     "-O3", "-std=gnu++17"]
 	bld.program(source="main.cpp",
                     target="test",
-                    includes = allIncludes,
-                    cxxflags = cxxflags
+                    stlib = ['stdc++'],
+                    cxxflags = cxxflags,
+                    includes = allIncludes
+                    #libdir = ld.env.LIBPATH
                     )
 
 	if bld.cmd != "clean":

@@ -31,11 +31,15 @@ def options(opt):
 def configure(conf):
         from waflib.Tools.compiler_cxx import cxx_compiler
         conf.env.CXX = "/usr/local/bin/g++" #specify the cxx compiler.
-        #conf.env.CXX = "/usr/bin/g++-6" #specify the cxx compiler.
+        #conf.env.CXX = "/usr/bin/g++-5" #specify the cxx compiler.
         conf.load("compiler_cxx")
+        #conf.env.append_unique('LIBPATH', ['/usr/lib', '/usr/local/lib', '/usr/local/lib64'])
+        #conf.env.append_unique('LIBPATH_ST', ['/usr/lib', '/usr/local/lib', '/usr/local/lib64'])
+        #conf.env.append_unique('LIBDIR', ['/usr/lib', '/usr/local/lib', '/usr/local/lib64'])
+        #conf.env.append_unique('LIB_ST', ['stdc++'])
         print conf.env
-	conf.check(header_name="stdio.h", features="cxx cxxprogram", mandatory=False)
-	conf.recurse('test')
+	#conf.recurse('test')
+
 
 
 def describe(ctx):
