@@ -290,17 +290,15 @@ TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
       for (const auto& tup: dbt.data()) {
         REQUIRE( std::get<0>(tup) == (double) i);
         REQUIRE( std::get<1>(tup) == (int) i);
-        REQUIRE( std::get<2>(tup) == wordyInteger(i));
-        i += 1;
-      }
-      //delete query;
+        REQUIRE( std::get<2>(tup) == wordyInteger(i));        i += 1;
+      }      //delete query;
     }
 }
 
 TEST_CASE ("Kmer iterator can be used to iterate over the kmers in a vector", "[KmerClassIterator]") {
   std::vector<int> xs(6);
   std::iota(xs.begin(), xs.end(), 0);
-  Kmer< std::vector<int> > mer3(3, xs);
+  Kmer< std::vector<int>, int, 3 > mer3(xs);
   REQUIRE( mer3.size() == 4);
   int n = 0;
   SECTION("auto works") {
@@ -323,9 +321,8 @@ TEST_CASE ("Kmer iterator can be used to iterate over the kmers in a vector", "[
                                  });
     REQUIRE(ssize == 12);
   }
-
   SECTION( "while done") {
-    Kmer<std::vector<int>>::iterator kitr(std::begin(xs), std::end(xs), 3);
+    Kmer<std::vector<int>, int, 3>::iterator kitr(std::begin(xs), std::end(xs));
     kitr.start();
     n = 0;
     while (!kitr.done()) {
@@ -338,7 +335,7 @@ TEST_CASE ("Kmer iterator can be used to iterate over the kmers in a vector", "[
   }
 
   SECTION( "for_each ") {
-    Kmer<std::vector<int>>::iterator kitr(std::begin(xs), std::end(xs), 3);
+    Kmer<std::vector<int>, int, 3>::iterator kitr(std::begin(xs), std::end(xs));
     kitr.start();
     n = 0;
     for_each(kitr, [&n] (const auto& kmer) {
@@ -349,5 +346,17 @@ TEST_CASE ("Kmer iterator can be used to iterate over the kmers in a vector", "[
       } );
   }
 }
+
+
+
+
+TEST_CASE("A tower of inheritence", "[inhertower]") {
+    std::cout << "carry on" << std::endl;
+    auto tow = make_tower(1,-1.0, std::string("one"));
+    tow(2);
+    tow(-2.0);
+    tow(std::string("two"));
+}
+
 
 
