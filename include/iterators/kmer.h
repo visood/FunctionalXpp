@@ -19,16 +19,20 @@ Kmer( Iterable xs): _xs(xs) {}
   iterator(const BaseItrType bitr,
            const BaseItrType eitr)
     : _bitr(bitr), _xitr(bitr), _eitr(eitr) {}
+
     std::array<ValueType, k> operator*() {
       std::array<ValueType, k>  elem;
       std::copy(_xitr, _xitr + k, std::begin(elem));
       return elem;
     }
+
     iterator& operator++() {
       _xitr++;
       return *this;
     }
+
     BaseItrType xitr() { return _xitr;}
+
     bool operator!=(iterator& that) {
       return _xitr != that.xitr();
     }
