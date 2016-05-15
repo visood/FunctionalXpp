@@ -1,0 +1,2 @@
+All mains should appear here as .cpp files.
+The subdirectories will contain classes, functions, etc used by the main programs.

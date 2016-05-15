@@ -1,0 +1,21 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+import glob, os
+
+excluded = []
+
+def build(bld):
+    cppFiles = set(
+            file.split("/")[-1]
+            for file in glob.glob(bld.path.abspath() + "/*.cpp")
+    ).difference(excluded)
+    INCLUDES = ["../../" + x for x in bld.env.INCLUDES_REL] + bld.env.INCLUDES_ABS
+
+    bld.stlib(
+        source = cppFiles,
+        target = "utils",
+        cxxflags = bld.env.CXXFLAGS,
+        includes = INCLUDES,
+        lib = bld.env.LDFLAGS_N
+  )

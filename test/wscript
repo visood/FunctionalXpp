@@ -1,65 +1,29 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-APPNAME = "FunctionalXpp"
-VERSION = "0.0"
-
-top = "."
-out = "build"
-
-#configuration methods
-
-from waflib.Configure import conf
-
-@conf
-def hi(ctx):
-	print("-> hello, world!, this is an example of a configuration method.")
-
-def printWithContext(message, ctx, withContext = True):
-	if not withContext:
-		print message
-	else:
-		print (message + ". Context %d" %id(ctx))
-
-
-
-def options(opt):
-	opt.load("compiler_cxx")
-
-def configure(conf):
-	conf.load("compiler_cxx")
-
-
-def describe(ctx):
-	print "Eventually this project will contain experiments in Modern C++,\n\
-with emphasis on  functional programming.\n\
-The project will be built with Waf,\n\
-which we begin to learn from the Waf book"
-	print "environment is a " + str(type(ctx.env))
-	try:
-		print(ctx.env)
-	except:
-		print "No environment in Context"
-
+DIRS = "utils database containers"
 
 def build(bld):
-        allIncludes = [".", "..",
-			"../include",
-			 "../include/iterators",
-                       "/usr/local/include/Catch"]
-        cxxflags = ["-Wall", "-Wno-unknown-pragmas",
-                    "-Wextra", "-Wconversion",
-                    "-O3", "-std=gnu++17"]
+        INCLUDES = ["../" + x for x in bld.env.INCLUDES_REL] + bld.env.INCLUDES_ABS
 	bld.program(source="main.cpp",
+                    use = ["TestContainers",
+                           "TestIterators",
+                           "TestDatabase",
+                           "TestUtils"],
+                           #"containers",
+                           #"iterators",
+                           #"database",
+                           #"utils"],
                     target="test",
-                    stlib = ['stdc++'],
-                    cxxflags = cxxflags,
-                    includes = allIncludes
-                    #libdir = ld.env.LIBPATH
+                    stlib = bld.env.STLIB, #static lib - needed if not default
+                    cxxflags = bld.env.CXXFLAGS,
+                    includes = INCLUDES,
+                    lib = bld.env.LDFLAGS_N
                     )
 
 	if bld.cmd != "clean":
 		from waflib import Logs
 		bld.logger = Logs.make_logger("test.log", "build") #to get a clean output
-		#bld.check(header_name="sadlib.h", features="cxx cxxprogram", mandatory=False), this is how you check a header
 		bld.logger = None
+
+        bld.recurse(DIRS)
