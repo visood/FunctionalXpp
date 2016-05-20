@@ -81,11 +81,12 @@ auto fact = [] (auto f)
 };
 
 // Some kind of Y combinator
+#if 0
 auto Y = [] (auto f)
   {
     return f([f] (int n) -> int { return Y(f)(n); });
   };
-
+#endif
 
 // Simple wrapper for a double for currying
 auto Double = [] (auto x)

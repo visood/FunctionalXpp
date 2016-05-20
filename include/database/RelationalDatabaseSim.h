@@ -19,15 +19,19 @@ StrRdbRow(std::vector<std::string> row) : _data(row) {}
 
   std::string getString(uint index) const {
       check_index(index);
-      return _data[index - 1];
+      return _data[(size_t) index - 1];
   }
   double getDouble(uint index) const {
       check_index(index);
-      return DataType::convert<double, std::string>(_data[index - 1]);
+      return DataType::convert<double, std::string>(_data[(size_t)index - 1]);
   }
   int getInt(uint index) const {
       check_index(index);
-      return  DataType::convert<int, std::string>(_data[index - 1]);
+      return  DataType::convert<int, std::string>(_data[(size_t)index - 1]);
+  }
+  uint getUInt(uint index) const {
+    check_index(index);
+    return  DataType::convert<uint, std::string>(_data[(size_t)index - 1]);
   }
 
   void print() {
@@ -78,9 +82,9 @@ StrRowRdbTable(const StrRowRdbTable& st) :
     void check_row_size(const Sized& v) const {
     if (v.size() != _ncol)
       throw std::invalid_argument(
-        "A row of " + DataType::convert<std::string, int>(_ncol) +
+        "A row of " + DataType::convert<std::string, uint>(_ncol) +
         " cannot be extracted from a vector of length " +
-        DataType::convert<std::string, int>(v.size()));
+        DataType::convert<std::string, uint>(v.size()));
   }
 
   uint size() const { return (uint) _data.size();}
@@ -112,7 +116,11 @@ StrRowRdbTable(const StrRowRdbTable& st) :
       return _data[_position - 1].getDouble(index);
   }
   int getInt(const uint index) const {
-      return  _data[_position - 1].getInt(index);
+    return  _data[_position - 1].getInt(index);
+  }
+
+  uint getUInt(const uint index) const {
+    return  _data[_position - 1].getUInt(index);
   }
 
   void printCurrent() {
@@ -148,7 +156,10 @@ NamedStrRowRdbTable(Args... hdrnames):
         return StrRowRdbTable::getDouble(_columnIndex.at(clm) + 1);
     }
     int getInt(const string& clm) const {
-        return StrRowRdbTable::getInt(_columnIndex.at(clm) + 1);
+      return StrRowRdbTable::getInt(_columnIndex.at(clm) + 1);
+    }
+    uint geUtInt(const string& clm) const {
+      return StrRowRdbTable::getUInt(_columnIndex.at(clm) + 1);
     }
 private:
     Header<Args...> _header;
@@ -170,6 +181,9 @@ NamedTable(Args... hdrnames, const Table& table): _table(table),
     }
     int getInt(string clm) const {
         return _table.getInt(_columnIndex.at(clm));
+    }
+    uint getUInt(string clm) const {
+      return _table.getUInt(_columnIndex.at(clm));
     }
 private:
     Header<Args...> _header;
@@ -204,7 +218,7 @@ IterableRDB(ResType* res) : _start(res) {}
 
   class Iterator {
   public:
-  Iterator(ResType* res, int p) : _current(res), _position(p) {}
+  Iterator(ResType* res, uint p) : _current(res), _position(p) {}
 
     using self_type = Iterator;
     using self_reference = Iterator&;

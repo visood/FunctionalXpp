@@ -29,7 +29,7 @@ TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
       while(res->next()){
         auto tup = dbt.read(res);
         REQUIRE( std::get<0>(tup) == (double) i);
-        REQUIRE( std::get<1>(tup) == (int) i);
+        REQUIRE( std::get<1>(tup) == (uint) i);
         REQUIRE( std::get<2>(tup) == wordyInteger(i));
         i += 1;
       }

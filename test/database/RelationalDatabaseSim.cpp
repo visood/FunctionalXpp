@@ -27,7 +27,7 @@ TEST_CASE("Dispatch on a tuple type", "[TupleDispatch]") {
 
 
     REQUIRE( res->size() == (uint) table.size());
-    int i = 0;
+    uint i = 0;
     while (res->next()) {
       REQUIRE( (ArgPack<double, int, std::string>::Element(res, int_<0>()) == (double) i));
       REQUIRE( (ArgPack<double, int, std::string>::Element(res, int_<1>()) == (int) i));

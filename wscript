@@ -13,6 +13,16 @@ import glob, os
 
 from waflib.Configure import conf
 
+def printProcess(msg, l = 70):
+    lmsg = (l - len(msg))/2
+    msgToPrint = lmsg * "-" + msg + lmsg * "-"
+    if len(msgToPrint) < l:
+        msgToPrint = msgToPrint.split(" ")[0] + "  " + msgToPrint.split(" ")[1]
+
+    print l * "="
+    print msgToPrint
+    print l * "="
+
 def global_env(ctx):
     ctx.env.appname = APPNAME
     ctx.env.append_unique('LDFLAGS_N',
@@ -35,12 +45,10 @@ def global_env(ctx):
     )
 
 def configure_gcc(conf):
-    #conf.find_program('g++', var = 'CXX', mandator = True)
-    #conf.CXX = "g++"
-    #conf.load('compiler_cxx')
-    #conf.find_program('gcc', var = 'C', mandator = True)
-    conf.C = "gcc"
-    conf.load('compiler_c')
+    conf.find_program('g++', var = 'CXX', mandator = True)
+    conf.load('g++')
+    conf.find_program('gcc', var = 'C', mandator = True)
+    conf.load('gcc')
     global_env(conf)
     conf.env.append_unique('STLIB', 'stdc++')
     conf.env.append_unique('LDFLAGS_N', 'stdc++')
@@ -52,9 +60,9 @@ def configure_gcc(conf):
                          '-O3',
                          '-std=c++17']
     conf.define('RELEASE', 1)
-    print ("environment release\n")
-    print(conf.all_envs['release'])
-    print "-----------------------------------------------------------------------------------------"
+    #print ("environment release\n")
+    #print(conf.all_envs['release'])
+    #print "-----------------------------------------------------------------------------------------"
 
     conf.setenv('debug', env=conf.env.derive())
     conf.env.CXXFLAGS = ['-DDEBUG',
@@ -62,44 +70,52 @@ def configure_gcc(conf):
                          '-D_GLIBCXX_DEBUG_PEDANTIC',
                          '-g', '-std=c++17']
     conf.define('DEBUG', 1)
-    print ("environment debug\n")
-    print(conf.all_envs['debug'])
-    print "-----------------------------------------------------------------------------------------"
+    #print ("environment debug\n")
+    #print(conf.all_envs['debug'])
+    #print "-----------------------------------------------------------------------------------------"
 
 def configure_clang(conf):
     #conf.find_program('clang++', var='CXX', mandatory = True)
     conf.CXX = 'clang++'
-    conf.load("compiler_cxx")
-    #conf.find_program('clang', var='C', mandatory = True)
-    conf.C = 'clang'
-    conf.load("compiler_c")
+    conf.load("clang++")
+    conf.find_program('clang', var='C', mandatory = True)
+    conf.load("clang")
     global_env(conf)
     conf.env.append_unique('LDFLAGS_N',
-                           ['stdlib=libc++']
+                          [ "pthread",
+                            "util", "m"]
     )
-    conf.env.append_unique('STLIB', 'libc++')
-    conf.setenv('release', env=conf.env.derive())
+    conf.setenv('alternative-release', env=conf.env.derive())
     conf.env.CXXFLAGS = ['-Wall',
+                         '-Wno-unknown-pragmas',
                          '-Wextra',
-                         '-std=c++1z',
-                         '-stdlib=libc++',
-                         '-O3']
+                         '-Wconversion',
+                         '-fno-strict-aliasing',
+                         '-D_FORTIFY_SOURCE=2',
+                         '-fstack-protector',
+                         '--param=ssp-buffer-size=4',
+                         '-Wformat',
+                         '-Werror=format-security',
+                         '-fwrapv',
+                         '-O3',
+                         '-std=c++1z'
+    ]
     conf.env.append_unique('LIBS',
                            ['c++', 'c++abi'])
     conf.define('RELEASE', 1)
 
-    print ("environment release\n")
-    print(conf.all_envs['release'])
-    print "-----------------------------------------------------------------------------------------"
+    #print ("environment release\n")
+    #print(conf.all_envs['release'])
+    #print "-----------------------------------------------------------------------------------------"
 
-    conf.setenv('debug', env=conf.env.derive())
+    conf.setenv('alternative-debug', env=conf.env.derive())
     conf.env.CXXFLAGS = ['-g',
                          '-glldb',
                          '-Wdocumentation']
     conf.define('DEBUG', 1)
-    print ("environment debug\n")
-    print(conf.all_envs['debug'])
-    print "-----------------------------------------------------------------------------------------"
+    #print ("environment debug\n")
+    #print(conf.all_envs['debug'])
+    #print "-----------------------------------------------------------------------------------------"
 
 
 def options(opt):
@@ -113,7 +129,7 @@ def options(opt):
     )
 
 
-def configure(conf):
+def configure_bak(conf):
     from waflib.Tools.compiler_cxx import cxx_compiler
     cxx_compiler['linux'] = ['gxx', 'clangxx']
     conf.load('compiler_cxx')
@@ -131,13 +147,15 @@ def configure(conf):
         configure_gcc(conf)
     #print(conf.env)
 
-
-def build(bld):
-    if not bld.variant:
-        print "Build a variant: build_release or build_debug"
-    bld.recurse(DIRS)
+def configure(conf):
+    printProcess("Configuring g++")
+    configure_gcc(conf)
+    conf.setenv("switch_configuration")
+    printProcess("Configuring clang")
+    configure_clang(conf)
 
 from waflib.Build import BuildContext
+
 class release(BuildContext):
     cmd = 'build_release'
     variant = 'release'
@@ -145,3 +163,21 @@ class release(BuildContext):
 class debug(BuildContext):
     cmd = 'build_debug'
     variant = 'debug'
+class alt_release(BuildContext):
+    cmd = 'build_alt_release'
+    variant = 'alternative-release'
+
+class alt_debug(BuildContext):
+    cmd = 'build_alt_debug'
+    variant = 'alternative-debug'
+
+def build(bld):
+    if not bld.variant:
+        bld.fatal("""Please invoke a variant to build: \n
+        1. waf build_release \n
+        2. waf build_debug \n
+        3. waf build_alt_release \n
+        4. waf build_alt_debug\n""")
+
+    printProcess("Building " + bld.variant)
+    bld.recurse(DIRS)

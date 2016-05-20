@@ -14,10 +14,10 @@ TEST_CASE ("View a std::container", "[SimpleViewContainer]") {
   for( const auto& x: xs) {
     REQUIRE(x == i++);
   }
-  size_t btob = std::distance(xsview.begin(), xsview.begin());
+  long btob = std::distance(xsview.begin(), xsview.begin());
   INFO("distance begin to begin of view " << btob);
   REQUIRE(btob == 0);
-  size_t etoe = std::distance(xsview.end(), xsview.end());
+  long etoe = std::distance(xsview.end(), xsview.end());
   INFO("distance end to end of view " << etoe);
   REQUIRE(etoe == 0);
   std::cout << (uint) std::distance(xs.begin(), xs.end()) << std::endl;

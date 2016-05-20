@@ -4,9 +4,9 @@ template<typename T>
 struct DType {};
 
 namespace DataType {
-  const DType<double> Double;
-  const DType<std::string> String;
-  const DType<int> Integer;
+  //const DType<double> Double;
+  //const DType<std::string> String;
+  //const DType<int> Integer;
 
   template<typename T, typename S>
     T convert(const S& data) {

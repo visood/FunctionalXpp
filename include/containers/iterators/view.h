@@ -25,9 +25,9 @@ public:
       _ended =  c->done(b) ;
     }
 
-    View::self_type const* const container() const {return _container;}
+    View::self_type const* container() const {return _container;}
     const base_iterator_type& baseItr() const {return _bitr;}
-    const bool ended() const {return _ended;}
+    bool ended() const {return _ended;}
 
     ValueType operator *() const {
       if (not _container->done(_bitr))
@@ -47,21 +47,21 @@ public:
       return *this;
     }
 
-    const bool equals(iterator& that) const {
+    bool equals(iterator& that) const {
       if (_container != that.container()) return false;
       if (_ended) return not that.ended();
       if (that.ended()) return not _ended;
       return _container->equal(baseItr(), that.baseItr());
     }
 
-    const bool operator ==(iterator& that) {
+    bool operator ==(iterator& that) {
       return equals (that);
     }
-    const bool operator !=(iterator& that) const {
+    bool operator !=(iterator& that) const {
       return not (equals(that));
     }
 
-    size_t operator -(iterator& that) const {
+    long operator -(iterator& that) const {
       std::cout << "i exist to compute distance" << std::endl;
       return _bitr - that.baseItr();
     }
@@ -81,8 +81,8 @@ View (const base_container_type& b, const base_iterator_type& bb, const base_ite
 
   iterator start() ;
   std::pair<ValueType, base_iterator_type> next(const base_iterator_type& bitr) const;
-  const bool done(const base_iterator_type& bitr ) const;
-  const bool equal(const base_iterator_type& bitr1, const base_iterator_type& base2) const;
+  bool done(const base_iterator_type& bitr ) const;
+  bool equal(const base_iterator_type& bitr1, const base_iterator_type& base2) const;
 
   size_t size() const { return _base.size(); }
 
@@ -97,15 +97,16 @@ View (const base_container_type& b, const base_iterator_type& bb, const base_ite
   iterator begin() { return iterator(this, _baseBegin);}
   iterator end() { return iterator(this, _baseEnd);}
 
-  void for_each(self_type& xs, auto func) {
+  template<typename FuncType>
+  void for_each(self_type& xs, FuncType func) {
     std::for_each(begin(xs.base()), end(xs.base()),
                   [&func] (auto const& x) { func(x); });
   }
 
 private:
   const base_container_type& _base;
-  const base_iterator_type& _baseBegin;
-  const base_iterator_type& _baseEnd;
+  const base_iterator_type _baseBegin;
+  const base_iterator_type _baseEnd;
 };
 
 using SimpleView = View < std::vector, int, int >;
@@ -122,17 +123,18 @@ SimpleView::next(const base_iterator_type& bitr) const {
 }
 
 template<>
-const bool SimpleView::done(const base_iterator_type& bitr) const {
+bool SimpleView::done(const base_iterator_type& bitr) const {
   return not (bitr != _baseEnd);
 }
 
 template<>
-const bool SimpleView::equal(const base_iterator_type& bitr1,
-                             const base_iterator_type& bitr2) const {
+bool SimpleView::equal(const base_iterator_type& bitr1,
+                       const base_iterator_type& bitr2) const {
   return not(bitr1 != bitr2);
 }
 
 
+#if 0
 template<typename T, size_t n>
 using KmerView = View < std::vector, T, std::array<T, n> >;
 
@@ -159,3 +161,4 @@ const bool KmerView<T, n>::equal(const base_iterator_type& bitr1,
   return not(bitr1 != bitr2);
 }
 
+#endif
