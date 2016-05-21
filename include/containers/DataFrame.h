@@ -22,13 +22,13 @@ public:
     return getTupleValue<ResType, Args...>(res);
   }
 
-  void insert_from_tuple(const std::tuple<Args...>& tup, int_<sizeof...(Args)>) {
-    return;
+  void insert_from_tuple(const std::tuple<Args...>& tup, RowSize) {
+    std::get<ncol() - 1>(_data).push_back(std::get<ncol() - 1>(tup));
   }
 
   template <size_t index>
     void insert_from_tuple(const std::tuple<Args...>& tup, int_<index>) {
-    std::get<index>(_data).push_back(std::get<index>(tup));
+    std::get<index-1>(_data).push_back(std::get<index - 1>(tup));
     insert_from_tuple(tup, int_<index + 1>());
   }
 
@@ -36,13 +36,13 @@ public:
     void loadResult(ResType res) {
     while(res->next()) {
       ++_nrow;
-      insert_from_tuple(readRow(res), int_<0>());
+      insert_from_tuple(readRow(res), int_<1>());
     }
   }
 
   uint nrow() {return  _nrow;}
 
-  static constexpr uint col() {return (uint) std::tuple_size<RowType>::value;}
+  static constexpr uint ncol() {return (uint) std::tuple_size<RowType>::value;}
 
   template <size_t j>
     const ctype<j>& column() { return std::get<j>(_data);}
