@@ -153,4 +153,30 @@ TEST_CASE("DataFrame that contains a tuple of vectors", "[DataFrame]") {
       delete res;
     }
 
+    SECTION ("named columns in a data-frame") {
+      class EgDF : public DataFrame<double, int, std::string> {
+      public:
+        EgDF(StrRowRdbTable* res) : DataFrame<double, int, std::string>(res) {}
+
+        double vdouble(uint i) { return element<0>(i);}
+        int vint(uint i) { return element<1>(i);}
+        std::string vstr(uint i) {return element<2>(i);}
+      };
+
+      StrRowRdbTable* res = new StrRowRdbTable(3, table);
+      EgDF df(res);
+      REQUIRE(df.nrow() == table.size());
+      std::vector<uint> xs(df.nrow());
+      std::iota(xs.begin(), xs.end(), 0);
+      for (uint x: xs) {
+        REQUIRE(df.element<0>(x) == (double) x);
+        REQUIRE(df.element<1>(x) == (int) x);
+        REQUIRE(df.element<2>(x) == wordyInteger(x));
+        REQUIRE(df.vdouble(x) == (double) x);
+        REQUIRE(df.vint(x) == (int) x);
+        REQUIRE(df.vstr(x) == wordyInteger(x));
+      }
+      delete res;
+    }
+
 }
