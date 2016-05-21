@@ -8,10 +8,10 @@ struct Row {
 
 template < typename... Args>
 class DatabaseTable {
+public:
   using RowType = std::tuple<Args...>;
   using RowSize = int_<sizeof...(Args)>;
 
- public:
  DatabaseTable(std::string tablename) : _name(tablename) {}
 
   uint nrow() {return (uint) _data.size(); }

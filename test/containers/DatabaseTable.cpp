@@ -7,6 +7,7 @@
 #include "datatypes.h"
 #include "RelationalDatabaseSim.h"
 #include "DatabaseTable.h"
+#include "DataFrame.h"
 #include "catch.hpp"
 
 TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
@@ -82,3 +83,74 @@ TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
     }
 }
 
+TEST_CASE("A tuple of vectors ", "[VectorizedTuple]") {
+
+    std::vector<int> xs(10);
+    std::iota(xs.begin(), xs.end(), 0);
+    std::vector<std::string> ys(10);
+    std::transform(begin(xs), end(xs), begin(ys),
+                   [] (const int i) {
+                     return wordyInteger(i);
+                   });
+    //vectorizedTuple<int, std::string>::type xy;
+    //ParameterModifiedContainer< std::tuple, std::vector, int, std::string>::type xy;
+    VectorizedTuple<int, std::string>::type xy;
+    std::get<0>(xy) = xs;
+    std::get<1>(xy) = ys;
+
+    int i = 0;
+    for(const auto x: std::get<0>(xy))
+      REQUIRE (x == i++);
+    i = 0;
+    for(const auto x: std::get<1>(xy))
+      REQUIRE (x == wordyInteger(i++));
+}
+
+
+TEST_CASE("DataFrame that contains a tuple of vectors", "[DataFrame]") {
+    using string = std::string;
+    std::vector<std::vector<string> > table;
+    for (uint i = 0; i != 100; ++i) {
+        std::vector<string> row{
+            DataType::convert<string, double>((double) i),
+            DataType::convert<string, uint>(i),
+            wordyInteger(i) };
+        table.push_back(row);
+    }
+    SECTION ("read a result") {
+      StrRowRdbTable* res = new StrRowRdbTable(3, table);
+      std::cout << "obtained a pointer to a db table sim" << std::endl;
+      REQUIRE( res );
+      REQUIRE( res->size() == (uint) table.size());
+      uint i = 0;
+      DataFrame< double, int, std::string > df(res);
+      while(res->next()){
+        auto tup = df.readRow(res);
+        REQUIRE( std::get<0>(tup) == (double) i);
+        REQUIRE( std::get<1>(tup) == (uint) i);
+        REQUIRE( std::get<2>(tup) == wordyInteger(i));
+        i += 1;
+      }
+      delete res;
+    }
+
+    std::cout << "past read a result" << std::endl;
+
+    SECTION ("load from a result") {
+      StrRowRdbTable* res = new StrRowRdbTable(3, table);
+      std::cout << "obtained a pointer to a db table sim" << std::endl;
+      REQUIRE( res );
+      REQUIRE( res->size() == (uint) table.size());
+      DataFrame< double, int, std::string > df(res);
+      REQUIRE(df.nrow() == table.size());
+      std::vector<uint> xs(df.nrow());
+      std::iota(xs.begin(), xs.end(), 0);
+      for (uint x: xs) {
+        REQUIRE(df.element<0>(x) == (double) x);
+        REQUIRE(df.element<1>(x) == (int) x);
+        REQUIRE(df.element<2>(x) == wordyInteger(x));
+      }
+      delete res;
+    }
+
+}

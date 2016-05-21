@@ -249,3 +249,16 @@ struct Tower<First, Rest...> : Tower<First>, Tower<Rest...>
 template <typename... Fs>
 Tower<Fs...> make_tower(Fs... fs) { return {fs...}; }
 
+
+template <template <typename...> typename Container,
+          template <typename...> typename Mod,
+          typename... Args>
+  struct ParameterModifiedContainer {
+    using type = Container < Mod<Args>...>;
+  };
+
+
+template <typename... Args>
+using VectorizedTuple = ParameterModifiedContainer<std::tuple, std::vector, Args...>;
+
+
