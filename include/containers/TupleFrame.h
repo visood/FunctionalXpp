@@ -43,4 +43,37 @@ public:
 
 private:
   std::vector<RowType> _data;
+};
+
+
+//another version
+
+template <typename ResType, typename... Args>
+struct Reader {
+  std::tuple<Args...> operator() (ResType res) {
+    return getTupleValue<ResType, Args...>(res);
+  }
+};
+
+
+#if 0
+template < typename Reader, typename Mapper>
+class TupleFrame {
+public:
+TupleFrame(Reader r, Mapper m) : _read(r), _mapped(m) {}
+
+  template< class ResType>
+  auto collect(ResType res) {
+    if (res)
+    std::vector<decltype(_mapped(_read(res)))> df;
+    while (res->next()) {
+      df.push_back(_mapped(_read(res)));
+    }
+  }
+
+
+private:
+  Reader _read;
+  Mapper _mapped;
 }
+#endif
