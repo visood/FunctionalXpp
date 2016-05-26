@@ -203,3 +203,25 @@ TEST_CASE("A result reader", "[Reader]") {
   }
 
 }
+
+TEST_CASE("Read a result", "[ReadResult]") {
+  using string = std::string;
+  std::vector<std::vector<string> > table;
+  for (uint i = 0; i != 100; ++i) {
+    std::vector<string> row{
+      DataType::convert<string, double>((double) i),
+        DataType::convert<string, uint>(i),
+        wordyInteger(i) };
+    table.push_back(row);
+  }
+  StrRowRdbTable* res = new StrRowRdbTable(3, table);
+  Read<double, int, std::string> read;
+  uint x = 0;
+  while(res->next()) {
+    auto tup = read.result(res);
+    REQUIRE(std::get<0>(tup) == (double) x);
+    REQUIRE(std::get<1>(tup) == (int) x);
+    REQUIRE(std::get<2>(tup) == wordyInteger(x++));
+  }
+
+}
