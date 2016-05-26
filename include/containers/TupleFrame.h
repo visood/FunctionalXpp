@@ -48,6 +48,14 @@ private:
 
 //another version
 
+template <typename... Args>
+struct Read{
+  template <typename ResType>
+  static std::tuple<Args...> result(ResType res) {
+    return getTupleValue<ResType, Args...>(res);
+  }
+};
+
 template <typename ResType, typename... Args>
 struct Reader {
   std::tuple<Args...> operator() (ResType res) {
@@ -55,25 +63,37 @@ struct Reader {
   }
 };
 
-
 #if 0
-template < typename Reader, typename Mapper>
+template <typename T, typename S>
+  struct Mapper {
+    using type_from = S;
+    using type_to = T;
+  };
+
+//template < typename Reader, typename Mapper>
+template< typename To, typename... From >
 class TupleFrame {
 public:
-TupleFrame(Reader r, Mapper m) : _read(r), _mapped(m) {}
+    TupleFrame(Read<S> r, Mapper<T, S> m) :
+  _read(r), _mapped(m) {}
 
   template< class ResType>
   auto collect(ResType res) {
     if (res)
-    std::vector<decltype(_mapped(_read(res)))> df;
+    std::vector<To>> df;
     while (res->next()) {
       df.push_back(_mapped(_read(res)));
     }
   }
 
+  template<TupMapper func, typename U >
+  TupleFrame< U, S >  Map(TupMapper func, Mapper<U, T>) {
+    return TupleFrame(_read, [] (auto tup) {return func(_mapped(tup));});
+  }
+
 
 private:
-  Reader _read;
-  Mapper _mapped;
+  Read<S> _read;
+  Mapper<T, S> _mapped;
 }
 #endif
