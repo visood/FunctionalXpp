@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <limits>
 #include <dirent.h>
 #include <stdexcept>
@@ -14,6 +15,8 @@
 #include <limits>
 #include <tuple>
 #include<unordered_map>
+
+using uint = uint32_t;
 
 std::string wordyOneToNine(uint);
 
