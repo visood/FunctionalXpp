@@ -26,9 +26,10 @@ def printProcess(msg, l = 70):
 def global_env(ctx):
     ctx.env.appname = APPNAME
     ctx.env.append_unique('LDFLAGS_N',
-                          ['rt', 'pthread', 'm', 'z',
-                           'bz2', 'gsl', 'gslcblas',
-                           'dl']
+                          [ 'bz2', 
+                            'gsl',
+                            'gslcblas',
+                            'dl']
     )
     ctx.env.append_unique('CATCH_PATH', '/usr/local/include/Catch')
     ctx.env.append_unique("INCLUDES_REL",
@@ -48,7 +49,7 @@ def configure_gcc(conf):
     conf.find_program('g++', var = 'CXX', mandator = True)
     conf.load('g++')
     conf.find_program('gcc', var = 'C', mandator = True)
-    conf.load('gcc')
+    #conf.load('gcc')
     global_env(conf)
     conf.env.append_unique('STLIB', 'stdc++')
     conf.env.append_unique('LDFLAGS_N', 'stdc++')
@@ -78,8 +79,8 @@ def configure_clang(conf):
     #conf.find_program('clang++', var='CXX', mandatory = True)
     conf.CXX = 'clang++'
     conf.load("clang++")
-    conf.find_program('clang', var='C', mandatory = True)
-    conf.load("clang")
+    #conf.find_program('clang', var='CC', mandatory = True)
+    #conf.load("clang")
     global_env(conf)
     conf.env.append_unique('LDFLAGS_N',
                           [ "pthread",
