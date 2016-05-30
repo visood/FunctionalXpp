@@ -18,11 +18,7 @@ def build(bld):
                     stlib = bld.env.STLIB, #static lib - needed if not default
                     cxxflags = bld.env.CXXFLAGS,
                     includes = INCLUDES,
-                    lib = bld.env.LDFLAGS_N,
-
-                    libpath = ['/usr/bin', '/usr/local/bin', 
-                                '/usr/local/Cellar',
-                        ]
+                    lib = bld.env.LDFLAGS_N
                     )
 
 	if bld.cmd != "clean":
