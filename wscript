@@ -26,9 +26,7 @@ def printProcess(msg, l = 70):
 def global_env(ctx):
     ctx.env.appname = APPNAME
     ctx.env.append_unique('LDFLAGS_N',
-                          ['rt', 'pthread', 'm', 'z',
-                           'bz2', 'gsl', 'gslcblas',
-                           'dl']
+                          ['pthread', 'm', 'z',]
     )
     ctx.env.append_unique('CATCH_PATH', '/usr/local/include/Catch')
     ctx.env.append_unique("INCLUDES_REL",
@@ -44,11 +42,12 @@ def global_env(ctx):
                            ctx.env.CATCH_PATH[0]
     )
 
+#def configure_gcc(conf):
 def configure_gcc(conf):
-    conf.find_program('g++', var = 'CXX', mandator = True)
+    conf.find_program('g++',  var = 'CXX', mandatory = True)
     conf.load('g++')
-    conf.find_program('gcc', var = 'C', mandator = True)
-    conf.load('gcc')
+    #conf.find_program('gcc', var = 'CC', mandatory = True)
+    #conf.load('gcc')
     global_env(conf)
     conf.env.append_unique('STLIB', 'stdc++')
     conf.env.append_unique('LDFLAGS_N', 'stdc++')
@@ -74,8 +73,8 @@ def configure_gcc(conf):
     #print(conf.all_envs['debug'])
     #print "-----------------------------------------------------------------------------------------"
 
-def configure_clang(conf):
-    #conf.find_program('clang++', var='CXX', mandatory = True)
+def configure(conf):
+    conf.find_program('clang++', var='CXX', mandatory = True)
     conf.CXX = 'clang++'
     conf.load("clang++")
     conf.find_program('clang', var='C', mandatory = True)
@@ -85,7 +84,8 @@ def configure_clang(conf):
                           [ "pthread",
                             "util", "m"]
     )
-    conf.setenv('alternative-release', env=conf.env.derive())
+    #conf.setenv('alternative-release', env=conf.env.derive())
+    conf.setenv('release', env=conf.env.derive())
     conf.env.CXXFLAGS = ['-Wall',
                          '-Wno-unknown-pragmas',
                          '-Wextra',
@@ -98,7 +98,8 @@ def configure_clang(conf):
                          '-Werror=format-security',
                          '-fwrapv',
                          '-O3',
-                         '-std=c++1z'
+                         '-std=c++14',
+                         '-Wc++1z-extensions'
     ]
     conf.env.append_unique('LIBS',
                            ['c++', 'c++abi'])
@@ -108,14 +109,22 @@ def configure_clang(conf):
     #print(conf.all_envs['release'])
     #print "-----------------------------------------------------------------------------------------"
 
-    conf.setenv('alternative-debug', env=conf.env.derive())
+    #conf.setenv('alternative-debug', env=conf.env.derive())
+    conf.setenv('debug', env=conf.env.derive())
     conf.env.CXXFLAGS = ['-g',
                          '-glldb',
-                         '-Wdocumentation']
+                         '-Wdocumentation',
+                         '-Wc++1z-extensions'
+                         ]
     conf.define('DEBUG', 1)
     #print ("environment debug\n")
     #print(conf.all_envs['debug'])
     #print "-----------------------------------------------------------------------------------------"
+
+    print(conf.all_envs['release']);
+    print "-----------------------------------------------------------------------------------------"
+    print(conf.all_envs['debug']);
+
 
 
 def options(opt):
@@ -147,7 +156,7 @@ def configure_bak(conf):
         configure_gcc(conf)
     #print(conf.env)
 
-def configure(conf):
+def configure_bak2(conf):
     printProcess("Configuring g++")
     configure_gcc(conf)
     conf.setenv("switch_configuration")
