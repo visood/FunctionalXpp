@@ -37,12 +37,65 @@ public:
 template <typename T>
 using Parser = std::function<ParsedResult<T>(String)>;
 
+//successful and failed results
+template<typename T>
+ParsedResult<T> result(const T t, const String& s)
+{
+	return ParsedResult<T>(t, s);
+}
+
+template<typename T>
+const ParsedResult<T> nothing = ParsedResult<T>();
+
 template <typename T>
 ParsedResult<T> parse(const Parser<T>& pt, const String& in)
 {
 	return pt(in);
 }
 
+//a parser that returns the input string as the parsed result
+const Parser<String> verbatim = Parser<String>(
+	[=] (const String& in) {
+		return ParsedResult<String>(in, "");
+	}
+);
+//two simple parsers
+//a parser that will always return a provided value
+template<typename T>
+Parser<T> yield(const T& t)
+{
+	return Parser<T> (
+		[=] (const String& in) -> ParsedResult<T> {
+			return ParsedResult<T>(t, in);
+		}
+	);
+}
+//and one that will always fail
+//use it as failure<T>();
+#if 0
+template<typename T>
+Parser<T> failure()
+{
+	return Parser<T> (
+		[=] (const String& in) -> ParsedResult<T> {
+			in + "suppress warning";
+			//return ParsedResult<T>();
+			return nothing<T>;
+		}
+	);
+}
+#endif 
+//this is ugly.
+//can we have templated variables?
+template<typename T>
+const Parser<T> failure = Parser<T> (
+	[=] (const String& in) -> ParsedResult<T> {
+		in + "suppress warning";
+		return ParsedResult<T>();
+	}
+);
+
+//sequence parsers with operators
 //parse with one parser, and the remaining string with another,
 //and combine the results using a function
 template <typename T, typename S>
@@ -83,76 +136,6 @@ template <
 {
 	return std::function<R(T)>(f);
 }
-
-template<typename T>
-Parser<T> failure()
-{
-	return Parser<T> (
-		[=] (const String& in) -> ParsedResult<T> {
-			in + "suppress warning";
-			return ParsedResult<T>();
-		}
-	);
-}
-
-template<typename T>
-Parser<T> yield(const T& t)
-{
-	return Parser<T> (
-		[=] (const String& in) -> ParsedResult<T> {
-			return ParsedResult<T>(t, in);
-		}
-	);
-}
-
-Parser<char> item (
-	[] (const String& s) -> ParsedResult<char> {
-		if (s.empty()) return ParsedResult<char>();
-		return ParsedResult<char>(s[0], s.substr(1));
-	}
-);
-
-Parser<char> sat(const std::function<bool(const char c)>& f)
-{
-	return item >>= bind<char> (
-		[=] (const char c) -> Parser<char> {
-			if (not f(c)) return failure<char>();
-			return yield(c);
-		}
-	);
-}
-
-const auto space = sat (
-	[](const char c) -> bool {
-		return c == ' ';
-	}
-);
-
-const auto nline = sat (
-	[](const char c) -> bool {
-		return c == '\n';
-	}
-);
-
-const auto whitespace = sat (
-	[](const char c) -> bool {
-		return space(c) or nline(c);
-	}
-);
-
-const auto achar = [] (const char c) -> Parser<char> {
-	return  sat (
-		[c] (const char x) -> bool {
-			return c == x;
-		}
-	);
-};
-
-
-const auto astring = [] (const String& str) -> Parser<String> {
-	
-};
-
 
 template<typename T, typename S>
 Parser<std::tuple<T, S> > operator & (
@@ -196,6 +179,13 @@ Parser< std::tuple<This..., Next> > operator & (
 		}
 	);
 }
+
+Parser<char> item (
+	[] (const String& s) -> ParsedResult<char> {
+		if (s.empty()) return nothing<char>;
+		return result(s[0], s.substr(1));
+	}
+);
 
 template<size_t N, typename T>
 auto repeat(const Parser<T>& p, int_<N>)
@@ -391,34 +381,48 @@ Parser<T> operator +(const Parser<T> left, const Parser<T> right)
 	);
 }
 
-Parser<String> wordfun(
-	item >>= bind<char> (
-		[=] (const char c) -> Parser<String> {
-			if (c == ' ' or c == '\n') return yield(String());
-			return yield(String() + c) + wordfun;
-		}
-	)
-);
-
-//recursion is slow in c++,
-//so we write a parser that uses a while loop
-//words are defined to be demarcated by spaces
-//we need to strip surrounding spaces
-Parser<String> strip(const char sep = ' ')
+//a parser that satisfies a provided condition
+Parser<char> sat(const std::function<bool(const char c)>& f)
 {
-	return many(sep) >>= bind< List<char> > (
-		[=] (const auto& l) -> Parser<String> {
-			return Parser<String> (
-				[=] (const String& in) -> ParsedResult<String> {
-					const auto rsp = parse(split(sep), in);
-					if (rsp.empty) return ParsedResult<String>();
-
-				}
-			);
+	return item >>= bind<char> (
+		[=] (const char c) -> Parser<char> {
+			if (not f(c)) return failure<char>;
+			return yield(c);
 		}
 	);
 }
 
+//parsers that sat allows us to express
+const auto space = sat (
+	[](const char c) -> bool {
+		return c == ' ';
+	}
+);
+
+const auto nline = sat (
+	[](const char c) -> bool {
+		return c == '\n';
+	}
+);
+
+const auto whitespace = space | nline;
+
+const auto achar = [] (const char c) -> Parser<char> {
+	return  sat (
+		[c] (const char x) -> bool {
+			return c == x;
+		}
+	);
+};
+
+
+#if 0
+const auto astring = [] (const String& str) -> Parser<String> {
+};
+#endif
+
+
+//put the pieces together to build higher order parsers
 Parser<String> split(const char sep)
 {
 	return Parser<String> (
@@ -430,7 +434,131 @@ Parser<String> split(const char sep)
 	);
 }
 
-const Parser<String> word = split(' ') | split('.');
+const auto replace(const String& pattern, const String& replacement)
+{
+	return [=] (const String& in) -> String {
+		auto l = pattern.size();
+		String out;
+		size_t pos0 = 0;
+		auto pos = in.find(pattern, pos0);
+		while (pos != std::string::npos) {
+			out = out + in.substr(pos0, pos - pos0) + replacement;
+			pos0 = pos + l;
+			pos = in.find(pattern, pos0);
+		}
+		return out + in.substr(pos0);
+	};
+}
+
+const auto replace(const char p, const char r)
+{
+	return [=] (const String& in) -> String {
+		size_t pos0 = 0;
+		String out;
+		auto pos = in.find(p, pos0);
+		while (pos != std::string::npos) {
+			out = out + in.substr(pos0, pos - pos0) + r;
+			pos0 = pos + 1;
+			pos = in.find(p, pos0);
+		}
+		return out + in.substr(pos0);
+	};
+}
+
+const auto drop(const char c)
+{
+	return [=] (const String& in) -> String {
+		size_t pos0 = 0;
+		String out;
+		auto pos = in.find(c, pos0);
+		while (pos != std::string::npos) {
+			out = out + in.substr(pos0, pos - pos0);
+			pos0 = pos + 1;
+			pos = in.find(c, pos0);
+		}
+		return out + in.substr(pos0);
+	};
+}
+
+const auto drop(const String s)
+{
+	return [=] (const String& in) -> String {
+		size_t pos0 = 0;
+		size_t l = s.size();
+		String out;
+		auto pos = in.find(s, pos0);
+		while (pos != std::string::npos) {
+			out = out + in.substr(pos0, pos - pos0);
+			pos0 = pos + l;
+			pos = in.find(s, pos0);
+		}
+		return out + in.substr(pos0);
+	};
+}
+	
+//words are defined to be demarcated by spaces
+//we need to strip starting spaces
+auto const strip = [=] (const char c) -> Parser<String>
+{
+	//return several( achar(c) ) > yield(String());
+	return Parser<String> (
+		[=] (const String& in) -> ParsedResult<String> {
+			size_t pos = 0;
+			while(in[pos] == c) pos++;
+			return result( String(), in.substr(pos) );
+		}
+	);
+};
+
+//sequence functions ---
+//to work, g's input should be the output of f
+//not expressible through C++ auto that we use here.
+auto operator >= (const auto& f, const auto& g)
+{
+	return [=] (const auto& x) {
+		return g(f(x));
+	};
+};
+
+const auto unpunctuated = (
+	drop(',') >=
+	drop('.') >=
+	drop(';') >=
+	drop(':') >=
+	drop('\n') >=
+	drop('\t') >=
+	drop('-')
+);
+
+const auto sentence = strip(' ') > split('.');
+const auto sentences = many( sentence );
+//punctuation can be bad
+
+Parser<String> wordfun(
+	item >>= bind<char> (
+		[=] (const char c) -> Parser<String> {
+			if (c == ' ' or c == '\n') return yield(String());
+			return yield(String() + c) + wordfun;
+		}
+	)
+);
+
+const Parser<String> word0 = (
+	strip(' ') > (
+		split(' ') |
+		split(',') |
+		split('.')
+	)
+);
+
+const Parser<String> word = word0 >>= bind<String> (
+	[=] (const String& w) -> Parser<String> {
+		const auto uw = unpunctuated(w);
+		if (uw.size() == 0) return failure<String>;
+		return yield(uw);
+	}
+);
+
 #if 0
 Parser<String> word (
 	[=] (const String& in) -> ParsedResult<String> {

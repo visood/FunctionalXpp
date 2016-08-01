@@ -5,7 +5,7 @@ using namespace Expression;
 
 TEST_CASE("Functional Parser basics", "[FunctionalParserBasics]")
 {
-	const String hw("hello world  bonjour tous monde  and namastey jee.");
+	const String hw("hello world,  bonjour, tous monde,  and namastey jee.");
 
 	SECTION("item -- a parser that extracts characters from a string ") {
 		//an example do while loop to get characters from an input string
@@ -20,7 +20,7 @@ TEST_CASE("Functional Parser basics", "[FunctionalParserBasics]")
 
 	}
 
-	SECTION("sat -- parser that checks if an item (character) satisfies  a predicate") {
+	SECTION("sat -- checks if an item (character) satisfies  a predicate") {
 
 		const Parser<char> ish = sat(
 			[] (const char c) {return c == 'h';}
@@ -31,6 +31,68 @@ TEST_CASE("Functional Parser basics", "[FunctionalParserBasics]")
 		REQUIRE(not rh.empty);
 		CHECK(rh.value == 'h');
 	}
+}
+
+TEST_CASE("Parsers to strip and split a string",
+		  "[StripSplitParser], [FunctionalParserBasics]")
+{
+	const String spacedString("    hello world.");
+	const auto rstrip = parse(strip(' '), spacedString);
+	REQUIRE( not rstrip.empty);
+	CHECK(rstrip.value == "");
+	CHECK(rstrip.out == "hello world.");
+	const auto rws = parse(word & word, rstrip.out);
+	//std::cout << rws.value << std::endl;
+	REQUIRE( not rws.empty);
+	CHECK( std::get<0>(rws.value) == "hello");
+	CHECK( std::get<1>(rws.value) == "world");
+
+	CHECK(unpunctuated(",.;:hello") == "hello");
+	CHECK( parse(
+			   strip(' ') > verbatim,
+			   "               hello"
+		   ).value == "hello"
+	);
+	CHECK( parse(
+			   strip(',') > verbatim,
+			   ",;:-hello"
+		   ).value == ";:-hello"
+	);
+}
+
+TEST_CASE("Replace and remove a pattern in a string",
+		  "[ReplacePattern], [FunctionalParserBasics]")
+{
+	const String s = "oh namastey jee namastey, how do you do ?";
+	const auto allEnglish = (
+		replace("namastey", "hello") >= replace("jee", "sir")
+	);
+	const String ae = allEnglish(s);
+	CHECK(ae == "oh hello sir hello, how do you do ?");
+
+	const String s1("hello, jee,");
+	const auto commaToSpace = replace(',', ' ');
+	CHECK(commaToSpace(s1) == "hello  jee ");
+
+	const auto rn = drop("namastey");
+	CHECK( rn(s) == "oh  jee , how do you do ?");
+	const auto rnn = drop("namastey") >= drop("jee");
+	CHECK( rnn(s) == "oh   , how do you do ?");
+	const auto s2("hello,.,.\n");
+	CHECK( unpunctuated(s2) == "hello");
+}
+
+TEST_CASE("Parse sentences and words",
+		  "[ParseWords], [FunctionalParserBasics]")
+{
+	const String hw0("hello world,  bonjour, tous monde,  and namastey jee");
+	const auto hw = String("  ") + hw0 + ".";
+	SECTION("sentences -- parse sentences in a string") {
+		const auto rs = parse(sentence, hw);
+		REQUIRE(not rs.empty);
+		CHECK(rs.value == hw0);
+	}
+
 	SECTION("word -- parsers to extract a word from a string ") {
 		const auto rw = parse(word, hw);
 		REQUIRE(not rw.empty);
@@ -39,7 +101,7 @@ TEST_CASE("Functional Parser basics", "[FunctionalParserBasics]")
 	}
 
 
-	SECTION("sequence parsers -- define compound parsers as sequences of words") {
+	SECTION("sequence parsers -- compound parsers as sequences of words") {
 		const auto oneWord = repeat(word, int_<1>());
 		const auto r1w = parse(oneWord, hw);
 		INFO("test sequenced parses, one");
@@ -55,6 +117,7 @@ TEST_CASE("Functional Parser basics", "[FunctionalParserBasics]")
 
 		INFO("test sequenced parses, three");
 		const auto threeWords = repeat(word, int_<3>());
+		//const auto threeWords = word & word & word;
 		const auto r3w = parse(threeWords, hw);
 		REQUIRE(not r3w.empty);
 		CHECK(std::get<0>(r3w.value) == "hello");
@@ -86,9 +149,23 @@ TEST_CASE("Functional Parser basics", "[FunctionalParserBasics]")
 		CHECK(std::get<5>(r7w.value) == "and");
 		CHECK(std::get<6>(r7w.value) == "namastey");
 
-
+		INFO("test sequenced parses, eight");
+		const auto eightWords = repeat(word, int_<8>());
+		const auto r8w = parse(eightWords, hw);
+		REQUIRE(not r8w.empty);
+		CHECK(std::get<0>(r8w.value) == "hello");
+		CHECK(std::get<1>(r8w.value) == "world");
+		CHECK(std::get<2>(r8w.value) == "bonjour");
+		CHECK(std::get<3>(r8w.value) == "tous");
+		CHECK(std::get<4>(r8w.value) == "monde");
+		CHECK(std::get<5>(r8w.value) == "and");
+		CHECK(std::get<6>(r8w.value) == "namastey");
+		CHECK(std::get<7>(r8w.value) == "jee");
+		CHECK(r8w.out == "");
 	}
-	#if 0
+}
+
+#if 0
 	const auto pq2w = parseq(word).followed_by(word);
 	const auto rq2w = parse(pq2w, hw);
 	std::cout << "two words parsed with a Parseq: "
@@ -136,4 +213,3 @@ TEST_CASE("Functional Parser basics", "[FunctionalParserBasics]")
 		yield('!')
 	);
 	#endif
-}

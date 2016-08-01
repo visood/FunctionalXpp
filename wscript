@@ -26,7 +26,7 @@ def printProcess(msg, l = 70):
 def global_env(ctx):
     ctx.env.appname = APPNAME
     ctx.env.append_unique('LDFLAGS_N',
-                          [ 'bz2', 
+                          [ 'bz2',
                             'gsl',
                             'gslcblas',
                             'dl']
@@ -41,7 +41,7 @@ def global_env(ctx):
                           ]
     )
     #ctx.env.INCLUDES_N = ["../../../" + x for x in ctx.env.INCLUDES_REL]
-    ctx.env.append_unique('INCLUDES_ABS', 
+    ctx.env.append_unique('INCLUDES_ABS',
                            ctx.env.CATCH_PATH[0]
     )
 
