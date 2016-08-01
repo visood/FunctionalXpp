@@ -1,14 +1,18 @@
 #include <iostream>
 
-// Can be compiled and tested simply with "g++ -std=c++14 -o category category.cpp && ./category"
-// Lists as implemented here can be printed in reverse order, depending on the compiler. This is because
-// the order of pack expansion is not defined by the standard. With gcc 5, there is
-// still a bug, whereas clang do it the right way.
+// compile and test with "g++ -std=c++14 -o category category.cpp && ./category"
+// Lists as implemented here can be printed in reverse order,
+//depending on the compiler. This is because
+//the order of pack expansion is not defined by the standard.
+//With gcc 5, there is
+//still a bug, whereas clang does it the right.
 
 namespace category
 {
-// Here the main category is CPP. The objects are C++ types and morphisms are C++ lambdas.
-// We will also use the subcategory LIST, containg only list types and morphisms between lists.
+//The main category is CPP.
+//The objects are C++ types and morphisms are C++ lambdas.
+//We will also use the subcategory LIST,
+//containg only list types and morphisms between lists.
 
 // Identity morphism
 auto Id = [] (auto x) { return x; };
@@ -19,7 +23,7 @@ auto Add = [] (auto f, auto g)
   return [=] (auto x) { return f(x) + g(x); };
 };
 
-auto Substract = [] (auto f, auto g)
+auto Subtract = [] (auto f, auto g)
 {
   return [=] (auto x) { return f(x) - g(x); };
 };
@@ -29,7 +33,7 @@ auto Multiply = [] (auto f, auto g)
   return [=] (auto x) { return f(x) * g(x); };
 };
 
-// Compose two morphisms if it is possible
+// Compose two morphisms if possible
 auto Compose = [] (auto f, auto g)
 {
   return [=] (auto x) { return g(f(x)); };
@@ -104,20 +108,26 @@ auto curry = [] (auto f)
 };
 
 // Wrapper around a parameter pack
-// Returns a lambda expecting a lambda that will be mapped to the list
-auto List = [] (auto ...elements)
+// returns a lambda that expects a lambda,
+//to be be mapped over the list
+auto List = [] (auto... elements)
 {
   return [=] (auto f) { return f(elements...); };
 };
 
 // fmap is a functor (x->y) => (f(x) -> f(y))
-// Return a lambda expecting a lambda-list and have the same return type as List
+// Return a lambda that expects a lambda-list,
+//and have the same return type as List
 // This is needed in order to chain operations
 auto fmap = [] (auto f)
 {
   return [f] (auto list)
   {
-    return list([f] (auto ...elements) { return List(f(elements)...); });
+    return list(
+			[f] (auto ...elements) {
+				return List(f(elements)...);
+			}
+		);
   };
 };
 

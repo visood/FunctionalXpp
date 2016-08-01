@@ -132,7 +132,10 @@ TEST_CASE("Iterator to a RelationalDatabaseSim works", "[RDBSim], [RDBtableSim],
   REQUIRE( sum == 4950);
 }
 
-TEST_CASE("Header containing a tuple of column names", "[tableHeader]") {
+TEST_CASE(
+	"Header containing a tuple of column names",
+	"[tableHeader]"
+){
     //auto hdr = Header<string, string, string>("first", "second", "third");
     auto hdr = header("first", "second", "third");
     REQUIRE( hdr.str() == "first\tsecond\tthird") ;
@@ -141,7 +144,8 @@ TEST_CASE("Header containing a tuple of column names", "[tableHeader]") {
     REQUIRE( hdr2.str() == "first\tsecond\tthird\tfourth");
 }
 
-TEST_CASE("An index map for names in a header", "[headerIndexMap]") {
+TEST_CASE("An index map for names in a header", "[headerIndexMap]")
+{
     auto idxmap = tupindexes("first", "second", "third");
     REQUIRE ( (idxmap.size() == 3 and
                (idxmap["first"] == 0) and
