@@ -43,6 +43,8 @@ ParsedResult<T> parse(const Parser<T>& pt, const String& in)
 	return pt(in);
 }
 
+//parse with one parser, and the remaining string with another,
+//and combine the results using a function
 template <typename T, typename S>
 Parser<S> operator >>= (
 	const Parser<T> pt,
@@ -50,9 +52,25 @@ Parser<S> operator >>= (
 ) {
 	return Parser<S> (
 		[=] (const String& in) -> ParsedResult<S> {
-			ParsedResult<T> rt = parse(pt, in);
+			const ParsedResult<T> rt = parse(pt, in);
 			if (rt.empty) return ParsedResult<S>();
 			return parse(fps(rt.value), rt.out);
+		}
+	);
+}
+
+//sometimes we will need to ignore the value parsed,
+//and use the out string as input to the next parser.
+template <typename T, typename S>
+Parser<S> operator > (
+	const Parser<T>& pt,
+	const Parser<S>& ps
+) {
+	return Parser<S> (
+		[=] (const String& in) -> ParsedResult<S> {
+			const auto rt = parse(pt, in);
+			if (rt.empty) return ParsedResult<S>();
+			return parse(ps, rt.out);
 		}
 	);
 }
@@ -104,15 +122,37 @@ Parser<char> sat(const std::function<bool(const char c)>& f)
 	);
 }
 
-const auto space = [](const char c)->bool {
-	return c == ' ';
+const auto space = sat (
+	[](const char c) -> bool {
+		return c == ' ';
+	}
+);
+
+const auto nline = sat (
+	[](const char c) -> bool {
+		return c == '\n';
+	}
+);
+
+const auto whitespace = sat (
+	[](const char c) -> bool {
+		return space(c) or nline(c);
+	}
+);
+
+const auto achar = [] (const char c) -> Parser<char> {
+	return  sat (
+		[c] (const char x) -> bool {
+			return c == x;
+		}
+	);
 };
-const auto nline = [](const char c)->bool {
-	return c == '\n';
+
+
+const auto astring = [] (const String& str) -> Parser<String> {
+	
 };
-const auto whitespace = [](const char c) -> bool {
-	return space(c) or nline(c);
-};
+
 
 template<typename T, typename S>
 Parser<std::tuple<T, S> > operator & (
@@ -157,23 +197,27 @@ Parser< std::tuple<This..., Next> > operator & (
 	);
 }
 
-template<typename T>
-Parser<List<T>> many(const Parser<T>& pt)
+template<size_t N, typename T>
+auto repeat(const Parser<T>& p, int_<N>)
 {
-	return many1(pt) | yield(List<T>());
+	return repeat(p, int_<N-1>()) & p;
 }
 
 template<typename T>
-Parser<List<T> > many1(const Parser<T>& pt)
+auto repeat(const Parser<T>& p, int_<2>)
 {
-	using Ptype = List<T>;
-	return pt >>= bind<T> (
+	return p & p;
+}
+
+//we may extend repeat logically,
+//to include the case of a single occurrence
+template<typename T>
+Parser<std::tuple<T> > repeat(const Parser<T>& p, int_<1>)
+{
+	using Ptype = std::tuple<T>;
+	return p >>= bind<T> (
 		[=] (const auto& t) -> Parser<Ptype> {
-			return many(pt) >>= bind<Ptype> (
-				[=] (const auto& ts) -> Parser<Ptype> {
-					return yield(t >= ts);
-				}
-			);
+			return yield(std::make_tuple(t));
 		}
 	);
 }
@@ -210,7 +254,73 @@ List<T> nil()
 	return {};
 }
 
+//a functional parser that parses many Parser<T>
+//coded using mutual recursion
+//a parser that parses several values of pt must not fail
+template<typename T>
+Parser<List<T>> many(const Parser<T>& pt)
+{
+	return many1(pt) | yield(List<T>());
+}
+template<typename T>
+Parser<List<T> > many1(const Parser<T>& pt)
+{
+	using Ptype = List<T>;
+	return pt >>= bind<T> (
+		[=] (const auto& t) -> Parser<Ptype> {
+			return many(pt) >>= bind<Ptype> (
+				[=] (const auto& ts) -> Parser<Ptype> {
+					return yield(t >= ts);
+				}
+			);
+		}
+	);
+}
 
+//an imperative many parser
+//clearly not as elegant as the functional version above
+//a parser that parses several values of pt must not fail
+template<typename T>
+Parser< List<T> > several(const Parser<T>& pt)
+{
+	using Ptype = List<T>;
+	return Parser< Ptype > (
+		[=] (const String& in) -> ParsedResult< Ptype >  {
+			List<T> lt; //an empty list
+			String finalOut = in;
+			auto rt = parse(pt, in);
+			while (not rt.empty) {
+				lt.push_back(rt.value);
+				finalOut = rt.out;
+				rt = parse(pt, rt.out);
+			}
+			return ParsedResult< Ptype >(lt, finalOut);
+		}
+	);
+}
+
+//a type to parse repeated occurrences of the same pattern
+template<typename T>
+using Freq = std::pair<T, uint>;
+
+//how many consecutive occurrences of a Parser<T> ?
+template<typename T>
+Parser<uint> freq(const Parser<T>& pt)
+{
+	return Parser<uint> (
+		[=] (const String& in) -> ParsedResult<uint> {
+			uint n = 0;
+			String finalOut = in;
+			auto rt = parse(pt, in);
+			while(not rt.empty) {
+				n += 1;
+				finalOut = rt.out;
+				rt = parse(pt, rt.out);
+			}
+			return ParsedResult< uint > (n, finalOut);
+		}
+	);
+}
 
 
 template <typename... Args>
@@ -267,35 +377,6 @@ Parser<T> operator | (const Parser<T>& pt, const Parser<T>& pe )
 	);
 }
 
-#if 0
-template<typename T>
-struct FallBack : public Parser<T>
-{
-	FallBack(const Parser<T>& pt) : Parser<T>(pt) {}
-};
-
-template<typename T>
-Parser<T> operator & (
-	const Parser<T>& pt,
-	const FallBack<T>& ps
-){
-	return Parser<T> (
-		[=] (const String& in) -> ParsedResult<T> {
-			const auto r = parse(pt, in);
-			if (r.empty) return parse(ps, in);
-			return r;
-		}
-	);
-}
-
-template<typename T>
-Parser<T> orElse(const Parser<T>& pt)
-{
-	return FallBack<T>(pt);
-}
-
-#endif
-
 template<typename T>
 Parser<T> operator +(const Parser<T> left, const Parser<T> right)
 {
@@ -310,15 +391,60 @@ Parser<T> operator +(const Parser<T> left, const Parser<T> right)
 	);
 }
 
-Parser<String> word(
+Parser<String> wordfun(
 	item >>= bind<char> (
 		[=] (const char c) -> Parser<String> {
 			if (c == ' ' or c == '\n') return yield(String());
-			return yield(String() + c) + word;
+			return yield(String() + c) + wordfun;
 		}
 	)
 );
 
+//recursion is slow in c++,
+//so we write a parser that uses a while loop
+//words are defined to be demarcated by spaces
+//we need to strip surrounding spaces
+Parser<String> strip(const char sep = ' ')
+{
+	return many(sep) >>= bind< List<char> > (
+		[=] (const auto& l) -> Parser<String> {
+			return Parser<String> (
+				[=] (const String& in) -> ParsedResult<String> {
+					const auto rsp = parse(split(sep), in);
+					if (rsp.empty) return ParsedResult<String>();
 
+				}
+			);
+		}
+	);
+}
+
+Parser<String> split(const char sep)
+{
+	return Parser<String> (
+		[=] (const String& in) {
+			const auto p = in.find(sep);
+			if (p == std::string::npos) return ParsedResult<String>();
+			return ParsedResult<String>(in.substr(0, p), in.substr(p+1));
+		}
+	);
+}
+
+const Parser<String> word = split(' ') | split('.');
+#if 0
+Parser<String> word (
+	[=] (const String& in) -> ParsedResult<String> {
+		const auto p = in.find(' ');
+		if (p == std::string::npos) return ParsedResult<String>();
+		return ParsedResult<String>(in.substr(0, p), in.substr(p+1));
+	}
+);
+#endif
+
+
+namespace Regex
+{
+// we use regex to parse, in association of our functional parser
+} /* namespace Regex */
 
 } /* namespace Expression */
