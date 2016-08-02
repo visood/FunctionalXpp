@@ -495,7 +495,7 @@ const auto drop(const String s)
 		return out + in.substr(pos0);
 	};
 }
-	
+
 //words are defined to be demarcated by spaces
 //we need to strip starting spaces
 auto const strip = [=] (const char c) -> Parser<String>
@@ -553,22 +553,15 @@ const Parser<String> word0 = (
 
 const Parser<String> word = word0 >>= bind<String> (
 	[=] (const String& w) -> Parser<String> {
-		const auto uw = unpunctuated(w);
-		if (uw.size() == 0) return failure<String>;
-		return yield(uw);
+		return yield(unpunctuated(w));
 	}
 );
 
-#if 0
-Parser<String> word (
-	[=] (const String& in) -> ParsedResult<String> {
-		const auto p = in.find(' ');
-		if (p == std::string::npos) return ParsedResult<String>();
-		return ParsedResult<String>(in.substr(0, p), in.substr(p+1));
-	}
-);
-#endif
-
+const Parser<String> astring( const String& s)
+{
+	if (s.size() == 0) return yield(String());
+	return achar(s[0]) > astring(s.substr(1)) > yield(s);
+}
 
 namespace Regex
 {

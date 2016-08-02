@@ -165,6 +165,18 @@ TEST_CASE("Parse sentences and words",
 	}
 }
 
+TEST_CASE("Parse strings and chars",
+		  "[ParseStringsAndChars], [FunctionalParserBasics]"
+) {
+
+	const String s("hello world");
+	const auto a0 = parse(astring("hi"), s);
+	REQUIRE(a0.empty);
+	const auto a1 = parse(astring("hello"), s);
+	REQUIRE(not a1.empty);
+	CHECK(a1.value == "hello");
+}
+
 #if 0
 	const auto pq2w = parseq(word).followed_by(word);
 	const auto rq2w = parse(pq2w, hw);
