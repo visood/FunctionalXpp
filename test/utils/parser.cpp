@@ -175,6 +175,47 @@ TEST_CASE("Parse strings and chars",
 	const auto a1 = parse(astring("hello"), s);
 	REQUIRE(not a1.empty);
 	CHECK(a1.value == "hello");
+	CHECK(a1.out == " world");
+	const auto a2 = parse(istring("hello"), s);
+	CHECK(a2.value == "hello");
+	CHECK(a2.out == " world");
+	const auto a3 = parse(istring("hi"), s);
+	REQUIRE(a3.empty);
+}
+
+TEST_CASE("Operator to receive ParsedResult",
+		  "[OperatorParsedResult], [FunctionalParserBasics]"
+) {
+	const String s("hello world.");
+	ParsedResult<String> rs;
+#if 0
+	//ideally we would like to combine parsers with convenient syntax
+	const Parser<String> twoWords = {
+		const auto w1 <<= word;
+		const auto w2 <<= word;
+		yield(w1 + w2);
+	}
+	//somehow this should produce the following
+	const Parser<String> twoWords = word >>= bind<String> (
+		(const String& w1) -> Parser<String> {
+			return word >>= bind<String> (
+				(const String& w2) -> Parser<String> {
+					return w1 + w2;
+				}
+			);
+		}
+	);
+	//without any help
+	const Parser<String> twoWords(
+		[=](const String& in) -> ParsedResult<String> {
+			const auto w1 = parse(word, in);
+			if (w1.empty) return nothing<String>;
+			const auto w2 = parse(word, w1.out);
+			if (w2.empty) return nothing<String>;
+			return result(w1.value + w2.value, w2.out);
+		}
+	);
+#endif
 }
 
 #if 0

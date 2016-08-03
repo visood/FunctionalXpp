@@ -4,6 +4,7 @@
 #include <regex>
 #include <algorithm>
 #include <stdexcept>
+#include <clocale>
 
 namespace Expression
 {
@@ -36,6 +37,16 @@ public:
 
 template <typename T>
 using Parser = std::function<ParsedResult<T>(String)>;
+
+//we define Parseq akin to Parser
+template <typename Next, typename... Args>
+using Parseq = std::function<
+	ParsedResult< std::tuple<Args..., Next> > (ParsedResult<std::tuple<Args...>)
+>;
+template <typename Next, typename First>
+using Parseq = std::function<
+	ParsedResult< std::tuple<First, Next> > (ParsedResult<First>)
+>;
 
 //successful and failed results
 template<typename T>
@@ -313,6 +324,7 @@ Parser<uint> freq(const Parser<T>& pt)
 }
 
 
+#if 0
 template <typename... Args>
 class Parseq
 {
@@ -328,11 +340,22 @@ public:
 		return Parseq<Args..., T>( _parser & pt );
 	}
 
+	template <typename T>
+	Parser<T> collect(std::function< T(Args...) > f ) {
+		return Parser<T> (
+			[=] (const String& in) -> ParsedResult<T> {
+				const auto rq = parse(_parser, in);
+				if (rq.empty) return nothing<T>;
+				return result(f(rq.value), rq.out);
+			}
+		);
+	}
+
 	const Parser<Ptype>& parser() const {return _parser;}
 
 private:
 	const Parser<Ptype> _parser;
-};
+}; /* class Parseq */
 
 template <typename T>
 Parseq<T> parseq(const Parser<T>& pt)
@@ -354,6 +377,7 @@ ParsedResult<std::tuple<Args...> > parse(
 ){
 	return parse(pqt.parser(), in);
 }
+#endif
 
 template<typename T>
 Parser<T> operator | (const Parser<T>& pt, const Parser<T>& pe )
@@ -557,12 +581,119 @@ const Parser<String> word = word0 >>= bind<String> (
 	}
 );
 
+//functional programming allows us to express what a parser string
+//elegantly, and transparently
+//an imperative, and faster implementation will be
+//to loop over query string s, and match the characters against
+//the input to the parser. or in == s.substr(0, in.size())
+//this will still require use to provide wrapping Parser<...> 
 const Parser<String> astring( const String& s)
 {
 	if (s.size() == 0) return yield(String());
 	return achar(s[0]) > astring(s.substr(1)) > yield(s);
 }
 
+const auto istring(const String& s)
+{
+	if (s.size() == 0) return yield(String());
+	return Parser<String> (
+		[=] (const String& in) -> ParsedResult<String> {
+			if ( s == in.substr(0, s.size()) )
+				return result(s, in.substr(s.size()));
+			return nothing<String>;
+		}
+	);
+}
+
+
+//some more primitives
+const auto lower = sat(
+	[=] (const char c) {
+		return std::islower(c);
+	}
+);
+const auto upper = sat(
+	[=] (const char c) {
+		return std::isupper(c);
+	}
+);
+
+//we can obtain the result of a Parser
+#if 0
+template <typename T>
+auto operator <<=(ParsedResult<T>* x, const Parser<T>& pt)
+{
+	return [x, pt] (const String& in) {
+		std::cout << "now run it " << std::endl;
+		const auto r = parse(pt, in);
+		std::cout << "result " << r.value << " rest "  << r.out << std::endl;
+		x->value = r.value;
+		x->out = r.out;
+	};
+}
+#endif
+//we will need to convert a list of chars to a string
+
+String to_string(const List<char>& cs)
+{
+	return std::accumulate(begin(cs), end(cs), String());
+}
+
+//an identifier must start with a lower case
+#if 0
+const Parser<String> ident = lower >>= bind<char> (
+	[=] (const char x) -> Parser<String> {
+		return many(alphanum) >>= bind< List<char> > (
+			[=] (const List<char>& xs) -> Parser<String> {
+				return yield(to_string(x >= xs));
+			}
+		);
+	}
+);
+//ideally we would like to write a composite Parser like this
+const Parser<String> ident = {
+	const auto x <<= lower;
+	const auto xs <<= many(alphanum);
+	yield(to_string(x >= xs));
+}
+//not valid C++, we try
+const Parser<String> ident = sequence(
+	lower
+).followed_by(
+	many(alphanum)
+).collect(
+	[=] (const char c, const List<char>& cs) {
+		return c >= cs;
+	}
+);
+//or more simply
+
+const Parser<String> ident = Parseq<char, List<char>>(
+	lower & many(alphanum)
+).collect (
+	[=] (const char c, const List<char>& cs) {
+		return c >= cs;
+	}
+);
+//or we can use operators
+const Parser<String> ident = (lower & many(alphanum)) >>= (
+	[=] (const auto x, const auto& xs) {
+		return x >= xs;
+	}
+)
+
+#endif
+
+
+//the type Parseq
+Parseq<String, String> twoWords(
+	[=] (const ParsedResult<String>& r1) -> Parseq<String, String> {
+		if (r1.empty) return nothing< std::tuple<String, String> >;
+		const auto r2 = parse(word, r1.out);
+		if (r2.empty) return nothing< std::tuple<String, String> >;
+		return result(std::make_tuple(r1.value, r2.value), r2.out);
+	}
+);
 namespace Regex
 {
 // we use regex to parse, in association of our functional parser
