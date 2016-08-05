@@ -189,33 +189,38 @@ TEST_CASE("Operator to receive ParsedResult",
 	const String s("hello world.");
 	ParsedResult<String> rs;
 #if 0
-	//ideally we would like to combine parsers with convenient syntax
-	const Parser<String> twoWords = {
-		const auto w1 <<= word;
-		const auto w2 <<= word;
-		yield(w1 + w2);
-	}
-	//somehow this should produce the following
-	const Parser<String> twoWords = word >>= bind<String> (
-		(const String& w1) -> Parser<String> {
-			return word >>= bind<String> (
-				(const String& w2) -> Parser<String> {
-					return w1 + w2;
-				}
-			);
-		}
+	//a syntax that may work
+	String w1, w2;
+	const auto twoWords = for_(
+		w1 << word,
+		w2 << word
+	).yield(
+		std::make_tuple(w1, w2)
 	);
-	//without any help
-	const Parser<String> twoWords(
-		[=](const String& in) -> ParsedResult<String> {
-			const auto w1 = parse(word, in);
-			if (w1.empty) return nothing<String>;
-			const auto w2 = parse(word, w1.out);
-			if (w2.empty) return nothing<String>;
-			return result(w1.value + w2.value, w2.out);
-		}
+	//or 
+	const auto twoWords = for_(
+		w1 << word,
+		w2 << word,
+		yield(std::make_tuple(w1, w2))
 	);
-#endif
+	//this one will be easier, and implemented in standard C++,
+	//though it is ugly
+	const auto twoWords = for_(
+		word,
+		word,
+		yield(
+			[=] (const String& w1, const String& w2) {
+				return std::make_tuple(w1, w2);
+			}
+		)
+	);
+	//may be this compromise is possible
+	const auto twoWords = for_(
+		w1 << word,
+		w2 << word,
+		yield([&w1, &w2] () { return std::make_tuple(w1, w2) })
+	);
+
 }
 
 #if 0

@@ -38,6 +38,7 @@ public:
 template <typename T>
 using Parser = std::function<ParsedResult<T>(String)>;
 
+#if 0
 //we define Parseq akin to Parser
 template <typename Next, typename... Args>
 using Parseq = std::function<
@@ -47,6 +48,7 @@ template <typename Next, typename First>
 using Parseq = std::function<
 	ParsedResult< std::tuple<First, Next> > (ParsedResult<First>)
 >;
+#endif
 
 //successful and failed results
 template<typename T>
@@ -143,7 +145,7 @@ template <
 	typename T,
 	typename F,
 	typename R = typename std::result_of<F&(T)>::type
-	> std::function<R(T)> bind(F f)
+> std::function<R(T)> bind(F f)
 {
 	return std::function<R(T)>(f);
 }
@@ -180,17 +182,57 @@ Parser< std::tuple<This..., Next> > operator & (
 			if (rthis.empty) return ParsedResult<Extup>();
 			const auto rnext = parse(pnext, rthis.out);
 			if (rnext.empty) return ParsedResult<Extup>();
-			return ParsedResult<Extup>(
+			return ParsedResult<Extup> (
 				std::tuple_cat(
 					rthis.value,
 					std::make_tuple(rnext.value)
 				),
 				rnext.out
-			);
+			) ;
 		}
 	);
 }
 
+//a class that will store the results of a parser as well
+
+template <typename T>
+class Parsult
+{
+	using Ptype = std::tuple<T>;
+	Parsult(Ptype* const pp, const Parser<Ptype>& pt) :
+		_result(pp),
+		_parser(pt)
+	{}
+
+	template<typename S, typename Func>
+	Parser<T> yield(const Func& f)
+	{
+		return Parser<T> ()
+	}
+
+private:
+	Ptype* const _result;
+	const Parser<Ptype> pt;
+};
+
+template <typename T>
+Parsult<T> operator << (T& t, const Parser<T>& pt)
+{
+	return Parsult(&t, pt);
+}
+
+//a for comprehension for Parsult
+
+template<typename T, typename... Args>
+Parsult<Args..., T> for_(
+	const Parsult<Args...>& pargs,
+	const Parsult<T>& pt
+)
+{
+	return Parsult< std::tuple<Args..., T> > ()
+}
+
+//some primitive and compound parsers to utilize
 Parser<char> item (
 	[] (const String& s) -> ParsedResult<char> {
 		if (s.empty()) return nothing<char>;
@@ -324,7 +366,6 @@ Parser<uint> freq(const Parser<T>& pt)
 }
 
 
-#if 0
 template <typename... Args>
 class Parseq
 {
@@ -377,7 +418,6 @@ ParsedResult<std::tuple<Args...> > parse(
 ){
 	return parse(pqt.parser(), in);
 }
-#endif
 
 template<typename T>
 Parser<T> operator | (const Parser<T>& pt, const Parser<T>& pe )
@@ -639,8 +679,8 @@ String to_string(const List<char>& cs)
 	return std::accumulate(begin(cs), end(cs), String());
 }
 
-//an identifier must start with a lower case
 #if 0
+//an identifier must start with a lower case
 const Parser<String> ident = lower >>= bind<char> (
 	[=] (const char x) -> Parser<String> {
 		return many(alphanum) >>= bind< List<char> > (
@@ -675,6 +715,8 @@ const Parser<String> ident = Parseq<char, List<char>>(
 		return c >= cs;
 	}
 );
+
+const Parser<String> alphanum = 
 //or we can use operators
 const Parser<String> ident = (lower & many(alphanum)) >>= (
 	[=] (const auto x, const auto& xs) {
@@ -682,10 +724,9 @@ const Parser<String> ident = (lower & many(alphanum)) >>= (
 	}
 )
 
-#endif
 
 
-//the type Parseq
+//the type Parseq, not the class, just ideas
 Parseq<String, String> twoWords(
 	[=] (const ParsedResult<String>& r1) -> Parseq<String, String> {
 		if (r1.empty) return nothing< std::tuple<String, String> >;
@@ -694,6 +735,7 @@ Parseq<String, String> twoWords(
 		return result(std::make_tuple(r1.value, r2.value), r2.out);
 	}
 );
+#endif
 namespace Regex
 {
 // we use regex to parse, in association of our functional parser
