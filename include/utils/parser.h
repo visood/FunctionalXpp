@@ -145,7 +145,8 @@ template <
 	typename T,
 	typename F,
 	typename R = typename std::result_of<F&(T)>::type
-> std::function<R(T)> bind(F f)
+>
+std::function<R(T)> bind(F f)
 {
 	return std::function<R(T)>(f);
 }
@@ -212,14 +213,9 @@ class Parsult
 
 private:
 	Ptype* const _result;
-	const Parser<Ptype> pt;
+	const Parser<Ptype> _parser;
 };
 
-template <typename T>
-Parsult<T> operator << (T& t, const Parser<T>& pt)
-{
-	return Parsult(&t, pt);
-}
 
 //a for comprehension for Parsult
 
@@ -229,7 +225,32 @@ Parsult<Args..., T> for_(
 	const Parsult<T>& pt
 )
 {
-	return Parsult< std::tuple<Args..., T> > ()
+	return Parsult< Args..., T > ()
+}
+
+//how can we use Parsult?
+//we will definitely need to sequence them to make the same useful
+//make heads and tails of 'em
+
+template<typename R, typename T>
+Parser<R> operator[](
+  const std::function<R(T)> f,
+  const Parsult<T>& pt
+)
+{
+  pt.parser() >>= bind<T> (
+    [=] (const T t) -> Parser<R> {
+      return yield(f(t));
+    }
+  );
+} 
+template<typename R, typename... Args>
+Parser<R> operator[](
+  const std::function<R(Args...)> f,
+  const Parsult<Args...>& pa
+)
+{
+  
 }
 
 //some primitive and compound parsers to utilize
