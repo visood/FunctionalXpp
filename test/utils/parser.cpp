@@ -103,6 +103,14 @@ TEST_CASE("repeats", "[FunctionalParserBasics] [Repeat]")
 	REQUIRE(not rm.empty);
 	const List<char> clist {'h', 'o', 'h', 'o'};
 	CHECK(rm.value == clist);
+
+	const auto rs = parse(several(item), "hoho");
+	REQUIRE(not rs.empty);
+	CHECK(rs.value == clist);
+
+	const auto rf = parse(freq(item), "hoho" );
+	REQUIRE(not rf.empty);
+	CHECK(rf.value == 4U);
 }
 
 TEST_CASE("sat parser", "[FunctionalParserBasics] [Satisfy]")
@@ -112,9 +120,82 @@ TEST_CASE("sat parser", "[FunctionalParserBasics] [Satisfy]")
 	REQUIRE(not rh.empty);
 	CHECK( rh.value == 'h');
 
-	const auto rs1 = parse(space, "hello");
+	const auto rs1 = parse(char_(' '), "hello");
 	REQUIRE(rs1.empty);
-	const auto rs2 = parse(space, " hello");
+	const auto rs2 = parse(char_(' '), " hello");
 	REQUIRE(not rs2.empty);
 	CHECK(rs2.value == ' ');
+}
+
+TEST_CASE("spacing", "[FunctionalParserBasics] [Spacing]")
+{
+	const auto sp0 = token(item);
+		
+	const auto rs0 = parse(sp0, "     x     ");
+	REQUIRE(not rs0.empty);
+	CHECK(rs0.value == 'x');
+
+}
+
+TEST_CASE("regex capture", "[Regex]")
+{
+	const Parser< uint32_t > uintx = (
+		capture("[[:digit:]]+") >>= [=] (const String& si) {
+			return yield((uint32_t) std::stoul(si));
+		}
+	);
+	const auto ri1 = parse(uintx, "1212.hello");
+	REQUIRE(not ri1.empty);
+	CHECK(ri1.value == 1212U);
+	const auto ri2 = parse(uintx, "hello.1212");
+	REQUIRE(ri2.empty);
+
+
+	const Parser< int32_t > esintx = (
+		(char_('+') | char_('-')) >>= [=] (const char c) {
+			return capture("[[:digit:]]+") >>= [=] (const String& xs) {
+				int32_t i = std::stoi(xs);
+				return yield((c == '+' ? 1 : -1) * i);
+			};
+		}
+	);
+	const auto sintx = esintx | (uintx  >>= [=](const uint32_t u) {
+			return yield((int32_t) u);
+		}
+	);
+
+	const auto ri3 = parse(sintx, "+1212.hello");
+	REQUIRE(not ri3.empty);
+	CHECK(ri3.value == 1212);
+	const auto ri4 = parse(sintx, "-1212.hello");
+	REQUIRE(not ri4.empty);
+	CHECK(ri4.value == -1212);
+	const auto ri5 = parse(sintx, "1212.hello");
+	REQUIRE(not ri5.empty);
+	CHECK(ri5.value == 1212);
+	const auto ri6 = parse(sintx, "*1212.hello");
+	REQUIRE(ri6.empty);
+
+	const auto cdotx = char_('c') >> char_('.') >> (
+		(char_('*') >> uintx >>= [=](const auto u) {
+			return yield (std::make_tuple('*', u));
+		}) |
+		(char_('-') >> uintx >>= [=](const auto u) {
+			return yield (std::make_tuple('-', u));
+		}) |
+		(uintx >>= [=](const auto u) {
+			return yield (std::make_tuple('+', u));
+		})
+	);
+	const auto rc1 = parse(cdotx, "c.*1212.jasjasj");
+	REQUIRE(not rc1.empty);
+	CHECK(rc1.value == std::make_tuple('*', 1212));
+	const auto rc2 = parse(cdotx, "c.-1212.jasjasj");
+	REQUIRE(not rc2.empty);
+	CHECK(rc2.value == std::make_tuple('-', 1212));
+	const auto rc3 = parse(cdotx, "c.1212.jasjasj");
+	REQUIRE(not rc3.empty);
+	CHECK(rc3.value == std::make_tuple('+', 1212));
+	const auto rc4 = parse(cdotx, "c.+1212.jasjasj");
+	REQUIRE(rc4.empty);
 }

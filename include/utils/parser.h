@@ -2,44 +2,88 @@
 //we will implement both Scala and Haskell style monad here
 
 #pragma once
-#include "util.h"
-#include <list>
+#include "monadic.h"
 #include <regex>
 #include <algorithm>
 #include <stdexcept>
 #include <clocale>
+#include <regex>
 
 namespace Expression
 {
-//using String = std::string;
-using namespace Monadic;
-template<typename T>
+//using namespace Monadic;
+using String = std::string;
+
+//a const list can be a good example to design an immutable,
+//persistent data structure in C++.
+// a wrapper around std::list that employs monadic relationships
+template <typename T>
 using List = std::list<T>;
-//a head/tail list
+//we do not want to create a wrapper class, instead we use operators
+template< typename T>
+List<T> unit(const T& t) { return List<T>(t);}
+
+//the list should be cons list, we will use the stream operator
+//this is not the ideal solution
+//ideally we would like >> to create a new (persistent, immutable) list
+//checkout implementation attempt in list.h
 template<typename T>
-List<T>& operator >= (const T& head, List<T>& tail)
+List<T>& operator >> (const T& head, List<T>& tail)
 {
 	tail.push_front(head);
 	return tail;
 }
 
 template<typename T>
-const List<T> operator >= (const T& head, List<T> tail)
+const List<T>& operator >> (const T& head, List<T> tail)
 {
 	tail.push_front(head);
-	return tail;
+	return std::move(tail);
 }
 
 template<typename T>
-T head(const List<T>& list)
-{
-	return *begin(list);
-}
+const T& head(const List<T>& list) { return *begin(list);}
 
 template<typename T>
-List<T> tail(const List<T>& list)
+List<T> tail(const List<T>& list) { return List<T>(++begin(list), end(list));}
+
+
+
+//for a list monad we need to flatten a list of lists
+template<typename T>
+List<T> flatten(List< List<T> >& llt)
 {
-	return List<T>(++begin(list), end(list));
+	List<T> ltout;
+	auto it = ltout.begin();
+	for (const auto& lt : llt) {
+		ltout.insert(it, lt);
+	}
+	return ltout;
+}
+//an explicit map
+template<
+	typename T,
+	typename F,
+	typename S = typename std::result_of<F&(T)>::type
+>
+inline List<S> map(const F f, const List<T>& ts)
+{
+	List<S> ss;
+	for (const auto& t : ts) ss.push_back(f(t));
+	return ts;
+}
+//bind
+template<
+	typename T,
+	typename F,
+	typename S = typename std::result_of<F&(T)>::value_type
+>
+inline List<S>& operator >>= (
+	List<T>& ts,
+	const F& fst
+)
+{
+	return flatten( map(fst, ts));
 }
 
 template<typename T>
@@ -64,6 +108,14 @@ void print(const List<T>& l)
 	print(tail(l));
 }
 
+template<typename T>
+String to_string(const List<T>& l)
+{
+	if (l.empty())	return String();
+	return std::to_string(head(l)) + to_string(tail(l));
+}
+
+
 
 //to store the success of a parser
 template<typename T>
@@ -81,9 +133,9 @@ struct ParsedResult
 		empty(true)
 	{}
 
-	const T value;
-	const String out;
-	const bool empty;
+	T value;
+	String out;
+	bool empty;
 };
 
 //utility functions to construct ParsedSuccesss
@@ -140,6 +192,9 @@ const Parser<T> yield(const T& t)
 		}
 	);
 }
+//needs default constructor
+template< typename T >
+const Parser<T> yield() { return yield(T()); }
 #if 0
 template<typename T>
 const auto yield( const T& t)
@@ -337,6 +392,9 @@ Parser<T> operator | (
 }
 
 
+//many will be slow if it has to parse a large number of items
+//passing non-const reference causes incomprehensible compile errors
+//use imperative several instead
 template<typename T>
 Parser< List<T> > many(const Parser<T>& pt)
 {
@@ -347,11 +405,111 @@ Parser< List<T> > many1(const Parser<T>& pt)
 {
 	return pt >>= [=] (const T& t) {
 		return many(pt) >>= [=] (const List<T>& ts) {
-			return yield(t >= ts);
+			return yield(t >> ts);
 		};
 	};
 }
+#if 0
+//imperative version of many
+template<typename T>
+Parser< List<T> > several(const Parser<T>& pt)
+{
+	return Parser< List<T> > ([=] (const String& in) {
+			List<T> lt;
+			String finalOut = in;
+			auto rt = parse(pt, in);
+			while (not rt.empty) {
+				lt.push_back(rt.value);
+				finalOut = rt.out;
+				rt = parse(pt, rt.out);
+			}
+			return some(lt, finalOut);
+		}
+	);
+}
+#endif
 
+//we can generalize several to use a lambda to accumulate results
+template<
+	typename T,
+	typename L,
+	typename F
+>
+Parser<L> accumulate(const F& f, const Parser<T>& pt, const L& l)
+{
+	return Parser<L> (
+		[=] (const String& in) {
+			String finalOut = in;
+			auto rt = parse(pt, in);
+			L lmr = l;
+			while (not rt.empty) {
+				lmr = f(lmr, rt.value);
+				finalOut = rt.out;
+				rt = parse(pt, rt.out);
+			}
+			return some(lmr, finalOut);
+		}
+	);
+}
+//accumulate implies some kind of sum,
+//however if the output is a list,
+//we are putting the results into another container
+//infact we are changing the monadic category
+template<
+	typename M,
+	typename T,
+	typename F
+>
+Parser<M> mmap(const F& f, const Parser<T>& pt, const M& m)
+{
+	return Parser<M> (
+		[&] (const String& in) {
+			String finalOut = in;
+			auto rt = parse(pt, in);
+			M mc = m;
+			while (not rt.empty) {
+				f(mc, rt.value);
+				finalOut = rt.out;
+				rt = parse(pt, rt.out);
+			}
+			return some(mc, finalOut);
+		}
+	);
+}
+template<
+	typename M,
+	typename T,
+	typename F
+>
+Parser<M> mmap(const F& f, const Parser<T>& pt)
+{
+	return mmap(f, pt, M());
+}
+template<typename T>
+Parser< List<T> > several(const Parser<T>& pt)
+{
+	return mmap< List<T> >(
+		[=] (List<T>& l, const T& t) {
+			l.push_back(t);
+		},
+		pt
+	);
+}
+
+template<typename T>
+Parser<uint> freq(const Parser<T>& pt)
+{
+	return accumulate(
+		[=] (const uint s, const uint t) -> uint {
+			return s + t;
+		},
+		pt >> yield(1U), 0U
+	);
+}
+
+//a type to parse repeated occurrences of the same pattern
+template<typename T>
+using Freq = std::pair<T, uint>;
 
 //many parsers can be described in terms of a sat
 Parser<char> sat(const auto& pred)
@@ -362,16 +520,48 @@ Parser<char> sat(const auto& pred)
 	};
 }
 
+const auto isSpace = [=] (const char c) { return c == ' ';};
+
 const auto char_(const char c)
 {
 	return sat([=] (const char x) {return c == x;});
 }
 
-const auto space = char_(' ');
+const auto space = many(sat(isSpace)) >> yield<String>();
+
+//const auto space = char_(' ');
 const auto nline = char_('\n');
 const auto tab = char_('\t');
-const auto whitespace = space | nline | tab;
+const auto whitespace = char_(' ') | nline | tab;
 const auto period = char_('.');
+
+//remove space
+template <typename T>
+Parser<T> token(const Parser<T>& pt)
+{
+	return (
+		space >>
+		pt >>= [=] (const T& t) {
+			return space >> yield(t);
+		}
+	);
+}
+
+
+//regex enabled parsers
+Parser<String> capture(const String& pattern)
+{
+	return Parser<String> (
+		[=] (const String& in) {
+			std::smatch matches;
+			std::regex mexp( String("(") + pattern + ")(.*)");
+			if (std::regex_match(in, matches, mexp))
+				return some(matches[1].str(), matches[2].str());
+			return empty<String>;
+		}
+							
+	);
+}
 
 }
 /* namespace Expression */
