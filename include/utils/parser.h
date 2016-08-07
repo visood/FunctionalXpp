@@ -11,7 +11,8 @@
 
 namespace Expression
 {
-using String = std::string;
+//using String = std::string;
+using namespace Monadic;
 template<typename T>
 using List = std::list<T>;
 //a head/tail list

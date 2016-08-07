@@ -1,0 +1,12 @@
+* Hiccups and their resolution
+
+** Type of ~Null~
+
+Of course, the type system in C++ is very different from that of Haskell.        
+A mystery to me is how Haskell's type system is implemented at a lower level.
+In any case our concern here is the type of a ~Null~ value. It can be useful
+to define null value for a container type. Consider a ~List<T>~. Should the 
+null (empty) list also be parameterized ? For a ~Parser<T>~ I would like a 
+value of ~failure~ to always return a result that indicates a failure. In 
+C++ the syntax ~failure<T>()~ is ugly. Using simply ~failure~ would be clean.
+Can we have templated variables ?
