@@ -285,6 +285,7 @@ Parser<S> operator >> (
 		}
 	);
 }
+
 //and we will have to work harder when the second parser is a lambda
 template<
 	typename PS,

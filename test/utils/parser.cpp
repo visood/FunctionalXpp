@@ -176,7 +176,50 @@ TEST_CASE("regex capture", "[Regex]")
 	const auto ri6 = parse(sintx, "*1212.hello");
 	REQUIRE(ri6.empty);
 
-	const auto cdotx = char_('c') >> char_('.') >> (
+	const auto cdotx0 = char_('c') >> char_('.') >> (
+		( char_('*') | char_('-') | yield('+') ) & uintx
+	);
+	const auto cdotx = char_('c') >> char_('.') >> yield<String>();
+	const auto cposx = ( char_('*') | char_('-') | yield('+') ) & uintx;
+	const auto rposx = esintx | yield((int32_t) 0);
+#if 0
+	const auto tposx = (
+		cdotx >>
+		cposx >>= [=] (const auto& cp) {
+			return rposx >>= [=] (const auto& r) {
+				return yield(std::make_tuple(cp, r));
+			};
+		}
+	);
+#endif
+	//is the following syntax more expressive?
+	const auto tposx = (
+		cdotx >> (
+			cposx >>= [=](const auto& cp) {
+				return rposx >>= [=](const auto& r) {
+					return yield(std::make_tuple(cp, r));
+				};
+			}
+		)
+	);
+	const auto rtp1 = parse(tposx, "c.312-56");
+	CHECK(std::get<0>(rtp1.value) == std::make_tuple('+', 312) );
+	CHECK(std::get<1>(rtp1.value) == -56);
+	const auto rtp2 = parse(tposx, "c.-312+56");
+	CHECK(std::get<0>(rtp2.value) == std::make_tuple('-', 312) );
+	CHECK(std::get<1>(rtp2.value) == 56);
+	const auto rtp3 = parse(tposx, "c.*312");
+	CHECK(std::get<0>(rtp3.value) == std::make_tuple('*', 312) );
+	CHECK(std::get<1>(rtp3.value) == 0);
+
+
+#if 0
+	>>= [=] (const char c) {
+			return uintx >>= [=] (const auto u) {
+				return yield(std::make_tuple(c, u) );
+			};
+		}
+	);
 		(char_('*') >> uintx >>= [=](const auto u) {
 			return yield (std::make_tuple('*', u));
 		}) |
@@ -198,4 +241,5 @@ TEST_CASE("regex capture", "[Regex]")
 	CHECK(rc3.value == std::make_tuple('+', 1212));
 	const auto rc4 = parse(cdotx, "c.+1212.jasjasj");
 	REQUIRE(rc4.empty);
+#endif
 }
