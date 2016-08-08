@@ -142,6 +142,7 @@ struct ParsedResult
 template<>
 struct ParsedResult<void>
 {
+	using type = void;
 	ParsedResult(const String& s) :
 		out(s),
 		empty(false)
@@ -172,7 +173,7 @@ template<typename T>
 const ParsedResult<T> empty = ParsedResult<T>();
 
 template<>
-const ParsedResult<void> empty = ParsedResult<void>();
+const ParsedResult<void> empty<void> = ParsedResult<void>();
 
 //the parser itself is a function
 template< typename T >
@@ -221,8 +222,14 @@ const Parser<T> yield(const T& t)
 	);
 }
 //needs default constructor
-template< typename T >
-const Parser<T> yield() { return yield(T()); }
+//template< >
+const Parser<void> yield() {
+	return Parser<void> ( [=] (const String& in) {
+			return some(in);
+		}
+	);
+}
+	
 #if 0
 template<typename T>
 const auto yield( const T& t)
@@ -276,7 +283,7 @@ template<
 	typename F,
 	typename PS = typename std::result_of<F&(T)>::type,
 	typename RS = typename std::result_of<PS&(String)>::type,
-	typename S = typename RS::type
+	typename S  = typename RS::type
 >
 Parser<S> operator >>= (
 	const Parser<T>& pt,
@@ -290,16 +297,34 @@ Parser<S> operator >>= (
 		}
 	);
 }
-
+//lambda bind function for Parser<void>
+template<
+	typename F,
+	typename PS = typename std::result_of<F&()>::type,
+	typename RS = typename std::result_of<PS&(String)>::type,
+	typename S  = typename RS::type
+>
+Parser<S> operator >>= (
+	const Parser<void>& pt,
+	const F& fs
+)
+{
+	return Parser<S> ( [=] (const String& in) {
+			const auto rt = parse(pt, in);
+			if (rt.empty) return empty<S>;
+			return parse(fs(), rt.out);
+		}
+	);
+}
 //we need to deduce more types if the parser is also a lambda
 template<
 	typename PT,
 	typename F,
 	typename RT = typename std::result_of<PT&(String)>::type,
-	typename T = typename RT::type,
+	typename T  = typename RT::type,
 	typename PS = typename std::result_of<F&(T)>::type,
 	typename RS = typename std::result_of<PS&(String)>::type,
-	typename S = typename RS::type
+	typename S  = typename RS::type
 >
 const Parser<S> operator >>= (
 	const PT& pt,
@@ -310,6 +335,25 @@ const Parser<S> operator >>= (
 		const auto rt = pt(in);
 		if (rt.empty) return empty<S>;
 		return fst(rt.value)(rt.out);
+	};
+}
+//lambda bind function for a lambda that implies a Parser of voids
+template<
+	typename PT,
+	typename F,
+	typename PS = typename std::result_of<F&()>::type,
+	typename RS = typename std::result_of<PS&(String)>::type,
+	typename S  = typename RS::type
+>
+const Parser<S> operator >>= (
+	const PT& p,
+	const F& fs
+)
+{
+	return [=] (const String& in) {
+		const auto r = p(in);
+		if (r.empty) return empty<S>;
+		return fs()(r.out);
 	};
 }
 
@@ -347,6 +391,7 @@ Parser<S> operator >> (
 //however a parser of null type can also be defined using
 //a template specializing that takes no parameters,
 //but our parser is not a class!
+#if 0
 template<
 	typename F,
 	typename PS = typename std::result_of<F&()>::type,
@@ -360,6 +405,7 @@ Parser<S> operator >>= (
 {
 	return pt >> f();
 }
+#endif
 //and we will have to work harder when the second parser is a lambda
 template<
 	typename PS,
@@ -602,7 +648,7 @@ const auto char_(const char c)
 	return sat([=] (const char x) {return c == x;});
 }
 
-const auto space = many(sat(isSpace)) >> yield<String>();
+const auto space = many(sat(isSpace)) >> yield();
 
 //const auto space = char_(' ');
 const auto nline = char_('\n');
@@ -614,12 +660,13 @@ const auto period = char_('.');
 template <typename T>
 Parser<T> token(const Parser<T>& pt)
 {
-	return (
-		space >>
-		pt >>= [=] (const T& t) {
-			return space >> yield(t);
-		}
-	);
+	return space >>= [=] () {
+		return pt >>= [=] (const T& t) {
+			return space >>= [=] () {
+				return yield(t);
+			};
+		};
+	};
 }
 
 

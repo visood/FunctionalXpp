@@ -154,8 +154,7 @@ TEST_CASE("regex capture", "[Regex]")
 	const Parser< int32_t > esintx = (
 		(char_('+') | char_('-')) >>= [=] (const char c) {
 			return capture("[[:digit:]]+") >>= [=] (const String& xs) {
-				int32_t i = std::stoi(xs);
-				return yield((c == '+' ? 1 : -1) * i);
+				return yield((c == '+' ? 1 : -1) * std::stoi(xs));
 			};
 		}
 	);
@@ -179,20 +178,9 @@ TEST_CASE("regex capture", "[Regex]")
 	const auto cdotx0 = char_('c') >> char_('.') >> (
 		( char_('*') | char_('-') | yield('+') ) & uintx
 	);
-	const auto cdotx = char_('c') >> char_('.') >> yield<String>();
+	const auto cdotx = char_('c') >> char_('.') >> yield();
 	const auto cposx = ( char_('*') | char_('-') | yield('+') ) & uintx;
 	const auto rposx = esintx | yield((int32_t) 0);
-#if 0
-	const auto tposx = (
-		cdotx >>
-		cposx >>= [=] (const auto& cp) {
-			return rposx >>= [=] (const auto& r) {
-				return yield(std::make_tuple(cp, r));
-			};
-		}
-	);
-#endif
-	//is the following syntax more expressive?
 	const auto tposx = (
 		cdotx >>= [=]() {
 			return cposx >>= [=](const auto& cp) {
@@ -244,7 +232,10 @@ TEST_CASE("regex capture", "[Regex]")
 #endif
 }
 
-TEST_CASE("no-value parsed result", "[NoValueParsedResult]")
+TEST_CASE(
+	"no-value parsed result",
+	"[NoValueParsedResult] [FunctionalParserBasics]"
+)
 {
 	const auto nvpr = ParsedResult<void>("hello");
 	REQUIRE(not nvpr.empty);
@@ -273,4 +264,16 @@ TEST_CASE("no-value parsed result", "[NoValueParsedResult]")
 	CHECK( rvh.out == "world");
 	REQUIRE(parse(pvh, "hello").empty);
 
+
+	const auto pvh2 = pv >>= [=] () {return yield();};
+	const auto rvh2 = parse(pvh, "xworld");
+	REQUIRE( not rvh2.empty);
+	CHECK( rvh2.out == "world");
+	REQUIRE(parse(pvh2, "hello").empty);
+
+	const auto pvh3 = pv >>= [=] () {return pv;};
+	const auto rvh3 = parse(pvh3, "xxworld");
+	REQUIRE( not rvh3.empty);
+	CHECK( rvh3.out == "orld");
+	REQUIRE(parse(pvh3, "xworld").empty);
 }
