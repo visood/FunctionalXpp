@@ -194,13 +194,13 @@ TEST_CASE("regex capture", "[Regex]")
 #endif
 	//is the following syntax more expressive?
 	const auto tposx = (
-		cdotx >> (
-			cposx >>= [=](const auto& cp) {
+		cdotx >>= [=]() {
+			return cposx >>= [=](const auto& cp) {
 				return rposx >>= [=](const auto& r) {
 					return yield(std::make_tuple(cp, r));
 				};
-			}
-		)
+			};
+		}
 	);
 	const auto rtp1 = parse(tposx, "c.312-56");
 	CHECK(std::get<0>(rtp1.value) == std::make_tuple('+', 312) );
@@ -242,4 +242,35 @@ TEST_CASE("regex capture", "[Regex]")
 	const auto rc4 = parse(cdotx, "c.+1212.jasjasj");
 	REQUIRE(rc4.empty);
 #endif
+}
+
+TEST_CASE("no-value parsed result", "[NoValueParsedResult]")
+{
+	const auto nvpr = ParsedResult<void>("hello");
+	REQUIRE(not nvpr.empty);
+	CHECK( nvpr.out == "hello");
+
+	const auto pv = Parser<void> (
+		[=] (const String& in) {
+			const auto rx = parse(char_('x'), in);
+			if (rx.empty) return empty<void>;
+			return some(rx.out);
+			//if (rx.empty) return ParsedResult<void>();
+			//return ParsedResult<void>(rx.out);
+		}
+	);
+
+	const auto rv = parse(pv, "xhello");
+	REQUIRE(not rv.empty);
+	CHECK(rv.out == "hello");
+	const auto rv1 = parse(pv, "hello");
+	REQUIRE(rv1.empty);
+
+	const auto pvh = pv >>= [=]() {return yield(String("hello"));};
+	const auto rvh = parse(pvh, "xworld");
+	REQUIRE(not rvh.empty);
+	CHECK( rvh.value == "hello");
+	CHECK( rvh.out == "world");
+	REQUIRE(parse(pvh, "hello").empty);
+
 }

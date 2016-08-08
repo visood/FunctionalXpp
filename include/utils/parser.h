@@ -138,6 +138,22 @@ struct ParsedResult
 	bool empty;
 };
 
+//a template specialization when there is no value!
+template<>
+struct ParsedResult<void>
+{
+	ParsedResult(const String& s) :
+		out(s),
+		empty(false)
+	{}
+	ParsedResult() :
+		out(""),
+		empty(true)
+	{}
+	String out;
+	bool empty;
+};
+
 //utility functions to construct ParsedSuccesss
 template<typename T>
 ParsedResult<T> some(const T& t, const String& s)
@@ -145,12 +161,24 @@ ParsedResult<T> some(const T& t, const String& s)
 	return ParsedResult<T>(t, s);
 }
 
+//i cannot specialize to template<>, compile errors
+//but i can overload
+ParsedResult<void> some(const String& s)
+{
+	return ParsedResult<void>(s);
+}
+
 template<typename T>
 const ParsedResult<T> empty = ParsedResult<T>();
+
+template<>
+const ParsedResult<void> empty = ParsedResult<void>();
 
 //the parser itself is a function
 template< typename T >
 using Parser = std::function< ParsedResult<T>(String) >;
+
+
 //having a type defined for the Parser will make the code
 //more expressive, though we will provide facility to use
 //plain lambdas as Parsers ... we will simply need template code
@@ -226,6 +254,22 @@ Parser<S> operator >>= (
 	);
 }
 
+//that we need to define for a Parser<void> as well
+template<typename S>
+Parser<S> operator >>= (
+	const Parser<void>& pt,
+	const std::function< Parser<S>() >& fs
+)
+{
+	return Parser<S> ( [=] (const String& in) {
+			const auto rt = parse(pt, in);
+			if (rt.empty) return empty<S>;
+			return parse(fs(), rt.out);
+		}
+	);
+}
+
+
 //we will not like to pass std::function to use the bind operator >>=
 template<
 	typename T,
@@ -286,6 +330,36 @@ Parser<S> operator >> (
 	);
 }
 
+
+//our monadic interpretation of a parser is not as simple as that of a list
+//so far an empty monad has contained neither a value, nor an out string.
+//however we can imagine the value of non-empty monad that has no value,
+//but does have an out string.
+//we have implemented by returning a ParsedResult<T>(T(), out)
+//in our current implementation.
+//we can define a claa Nothing!
+//our we can mimic the effect of such a null type through defining
+//bind function >>= that takes a function with no arguments.
+//this function will implicitly convert any parser on the left into
+//a parser without any value type (parsed values are lost).
+//plus the resulting syntax when chaining parsers is cleaner and
+//clearer (we do not use >>, instead >>= goes everywhere).
+//however a parser of null type can also be defined using
+//a template specializing that takes no parameters,
+//but our parser is not a class!
+template<
+	typename F,
+	typename PS = typename std::result_of<F&()>::type,
+	typename RS = typename std::result_of<PS&(String)>::type,
+	typename S  = typename  RS::type
+>
+Parser<S> operator >>= (
+	const auto& pt,
+	const F& f
+)
+{
+	return pt >> f();
+}
 //and we will have to work harder when the second parser is a lambda
 template<
 	typename PS,
