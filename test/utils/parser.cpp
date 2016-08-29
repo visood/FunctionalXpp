@@ -130,7 +130,7 @@ TEST_CASE("sat parser", "[FunctionalParserBasics] [Satisfy]")
 TEST_CASE("spacing", "[FunctionalParserBasics] [Spacing]")
 {
 	const auto sp0 = token(item);
-		
+
 	const auto rs0 = parse(sp0, "     x     ");
 	REQUIRE(not rs0.empty);
 	CHECK(rs0.value == 'x');
@@ -277,3 +277,54 @@ TEST_CASE(
 	CHECK( rvh3.out == "orld");
 	REQUIRE(parse(pvh3, "xworld").empty);
 }
+
+TEST_CASE(
+	"Experiment with nicer syntax",
+	"[NicerParserSyntax]"
+)
+{
+	SECTION("Convert strings to intergers") {
+		//problem converting strings to ints
+		//what happens to an empty string
+		String msg;
+		try{
+			const uint32_t u = (uint32_t) std::stoul(msg);
+		} catch (const std::invalid_argument& e) {
+			msg += ": caught exception";
+		}
+		INFO("converting to uint " << msg);
+		REQUIRE(not msg.empty());
+		CHECK(msg.find("caught exception") != std::string::npos);
+	}
+
+	const Parser< uint32_t > uintx = (
+		capture("[[:digit:]]+") >>= [=] (const String& si) {
+			return yield((uint32_t) std::stoul(si));
+		}
+	);
+
+	const auto rc = parse(capture("[[:digit:]]+"), "hello world");
+	INFO("capture digits in hello world " << rc.value << ", " << rc.out);
+	REQUIRE(rc.empty);
+
+	const auto r0 = parse(uintx, "hello world");
+	std::cout << "parsed uintx in hello world " << r0.value << ", " << r0.out
+			  << std::endl;
+	INFO("parse uintx in hello world: " << r0.value << ", " << r0.out);
+	REQUIRE(r0.empty);
+
+	const auto twoTimes = do_<uint>::yield(
+		[] (const uint u) {return 2 * u;}
+	);
+
+	const auto r = parse(twoTimes(uintx), "1212");
+	REQUIRE(not r.empty);
+	CHECK(r.value == 2424);
+
+	const auto r1 = parse(twoTimes(uintx), "hello world");
+	INFO("parse twotimes hello world: " << r1.value << ", " << r1.out);
+	REQUIRE(r1.empty);
+
+
+}
+

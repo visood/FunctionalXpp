@@ -9,6 +9,12 @@
 #include <clocale>
 #include <regex>
 
+
+//macros for nicer parser syntax
+
+#define return_(x) return yield(x)
+
+
 namespace Expression
 {
 //using namespace Monadic;
@@ -28,30 +34,30 @@ List<T> unit(const T& t) { return List<T>(t);}
 //ideally we would like >> to create a new (persistent, immutable) list
 //checkout implementation attempt in list.h
 template<typename T>
-List<T>& operator >> (const T& head, List<T>& tail)
+inline List<T>& operator >> (const T& head, List<T>& tail)
 {
 	tail.push_front(head);
 	return tail;
 }
 
 template<typename T>
-const List<T>& operator >> (const T& head, List<T> tail)
+inline const List<T>& operator >> (const T& head, List<T> tail)
 {
 	tail.push_front(head);
 	return std::move(tail);
 }
 
 template<typename T>
-const T& head(const List<T>& list) { return *begin(list);}
+inline const T& head(const List<T>& list) { return *begin(list);}
 
 template<typename T>
-List<T> tail(const List<T>& list) { return List<T>(++begin(list), end(list));}
+inline List<T> tail(const List<T>& list) { return List<T>(++begin(list), end(list));}
 
 
 
 //for a list monad we need to flatten a list of lists
 template<typename T>
-List<T> flatten(List< List<T> >& llt)
+inline List<T> flatten(List< List<T> >& llt)
 {
 	List<T> ltout;
 	auto it = ltout.begin();
@@ -90,7 +96,7 @@ template<typename T>
 List<T> nil = List<T>();
 
 template<typename T>
-bool operator==(const List<T>& l1, const List<T>& l2)
+inline bool operator==(const List<T>& l1, const List<T>& l2)
 {
 	if (l1.empty()) return l2.empty();
 	if (l2.empty()) return false;
@@ -98,7 +104,7 @@ bool operator==(const List<T>& l1, const List<T>& l2)
 }
 
 template<typename T>
-void print(const List<T>& l)
+inline void print(const List<T>& l)
 {
 	if (l.empty()) {
 		std::cout << std::endl;
@@ -109,7 +115,7 @@ void print(const List<T>& l)
 }
 
 template<typename T>
-String to_string(const List<T>& l)
+inline String to_string(const List<T>& l)
 {
 	if (l.empty())	return String();
 	return std::to_string(head(l)) + to_string(tail(l));
@@ -189,12 +195,12 @@ using Parser = std::function< ParsedResult<T>(String) >;
 
 //a utility function to parse
 template< typename T>
-ParsedResult<T> parse(const Parser<T>& pt, const String& in)
+inline ParsedResult<T> parse(const Parser<T>& pt, const String& in)
 {
 	return pt(in);
 }
 //that can also be used with autos
-auto parse(const auto& pt, const String& in)
+inline auto parse(const auto& pt, const String& in)
 {
 	return pt(in);
 }
@@ -214,7 +220,7 @@ const Parser<T> failure = Parser<T>([=] (const String& in) {
 //with auto type deduction
 //we will use one of these, others are left here for documentation
 template< typename T >
-const Parser<T> yield(const T& t)
+inline const Parser<T> yield(const T& t)
 {
 	return Parser<T> ( [=] (const String& in) -> ParsedResult<T> {
 			return ParsedResult<T> (t, in);
@@ -229,16 +235,16 @@ const Parser<void> yield() {
 		}
 	);
 }
-	
+
 #if 0
 template<typename T>
-const auto yield( const T& t)
+inline const auto yield( const T& t)
 {
 	return [=] (const String& in) {
 		return some(t, in);
 	};
 }
-const auto yield = [] (const auto x) {
+inline const auto yield = [] (const auto x) {
 	return [=] (const String& in) {
 		return some(x, in);
 	};
@@ -248,7 +254,7 @@ const auto yield = [] (const auto x) {
 
 //an operator to bind
 template< typename T, typename S >
-Parser<S> operator >>= (
+inline Parser<S> operator >>= (
 	const Parser<T>& pt,
 	const std::function< Parser<S>(T) >& fst
 )
@@ -263,7 +269,7 @@ Parser<S> operator >>= (
 
 //that we need to define for a Parser<void> as well
 template<typename S>
-Parser<S> operator >>= (
+inline Parser<S> operator >>= (
 	const Parser<void>& pt,
 	const std::function< Parser<S>() >& fs
 )
@@ -285,7 +291,7 @@ template<
 	typename RS = typename std::result_of<PS&(String)>::type,
 	typename S  = typename RS::type
 >
-Parser<S> operator >>= (
+inline Parser<S> operator >>= (
 	const Parser<T>& pt,
 	const F& fst
 )
@@ -304,7 +310,7 @@ template<
 	typename RS = typename std::result_of<PS&(String)>::type,
 	typename S  = typename RS::type
 >
-Parser<S> operator >>= (
+inline Parser<S> operator >>= (
 	const Parser<void>& pt,
 	const F& fs
 )
@@ -326,7 +332,7 @@ template<
 	typename RS = typename std::result_of<PS&(String)>::type,
 	typename S  = typename RS::type
 >
-const Parser<S> operator >>= (
+inline const Parser<S> operator >>= (
 	const PT& pt,
 	const F& fst
 )
@@ -345,7 +351,7 @@ template<
 	typename RS = typename std::result_of<PS&(String)>::type,
 	typename S  = typename RS::type
 >
-const Parser<S> operator >>= (
+inline const Parser<S> operator >>= (
 	const PT& p,
 	const F& fs
 )
@@ -361,7 +367,7 @@ const Parser<S> operator >>= (
 //since we will drop the result of the first parser,
 //we do not need to its returned type, and can simply auto it
 template<typename S>
-Parser<S> operator >> (
+inline Parser<S> operator >> (
 	const auto& pt,
 	const Parser<S>& ps
 )
@@ -398,7 +404,7 @@ template<
 	typename RS = typename std::result_of<PS&(String)>::type,
 	typename S  = typename  RS::type
 >
-Parser<S> operator >>= (
+inline Parser<S> operator >>= (
 	const auto& pt,
 	const F& f
 )
@@ -412,7 +418,7 @@ template<
 	typename RS = typename std::result_of<PS&(String)>::type,
 	typename S = typename RS::type
 >
-Parser<S> operator >> (
+inline Parser<S> operator >> (
 	const auto& pt,
 	const auto& ps
 )
@@ -429,7 +435,7 @@ Parser<S> operator >> (
 //to obtain a std::tuple as the chained output
 
 template<typename T, typename S>
-Parser<std::tuple<T, S> > operator & (
+inline Parser<std::tuple<T, S> > operator & (
 	const Parser<T>& pt,
 	const Parser<S>& ps
 )
@@ -440,9 +446,18 @@ Parser<std::tuple<T, S> > operator & (
 		};
 	};
 }
+//specialize to when the second Parser drops its results
+template<typename T>
+inline Parser< std::tuple<T> > operator & (
+	const Parser<T>& pt,
+	const Parser<void>& p
+)
+{
+	return pt >>= [p] (const T& t) {return p >> yield(std::make_tuple(t));};
+}
 
 template<typename Next, typename... This>
-auto operator &(
+inline auto operator &(
 	const Parser< std::tuple<This...> >& pt,
 	const Parser<Next>& pn
 )
@@ -453,6 +468,16 @@ auto operator &(
 		};
 	};
 }
+//specialize to when Next  is Parser<void>
+template<typename... This>
+inline auto operator &(
+	const Parser< std::tuple<This...> >& pt,
+	const Parser<void>& p
+)
+{
+	return pt >>= [p] (const std::tuple<This...>& ts) {return p >> yield(ts);};
+}
+
 
 
 //some primitive and compound parsers to utilize
@@ -492,14 +517,14 @@ struct repeatImpl<T, 1>
 	}
 };
 template<size_t N, typename T>
-const auto repeat(const Parser<T>& pt)
+inline const auto repeat(const Parser<T>& pt)
 {
 	return repeatImpl<T, N>().from(pt);
 }
 
 //a parser may fail, then we might want to run another one
 template<typename T>
-Parser<T> operator | (
+inline Parser<T> operator | (
 	const Parser<T>& pt1,
 	const Parser<T>& pt2
 )
@@ -512,17 +537,29 @@ Parser<T> operator | (
 	);
 }
 
+//and if a parser fails we may want to move on to the next one
+template<typename T>
+inline Parser<T> maybe(const Parser<T>& pt) {return pt | yield(T());}
+
+inline Parser<void> maybe(const Parser<void>& p) {return p | yield();}
+
+//if we want to drop the result of a parser, we can also do
+
+template<typename T>
+inline Parser<void> drop(const Parser<T>& pt){ return pt >> yield(); }
+
+
 
 //many will be slow if it has to parse a large number of items
 //passing non-const reference causes incomprehensible compile errors
 //use imperative several instead
 template<typename T>
-Parser< List<T> > many(const Parser<T>& pt)
+inline Parser< List<T> > many(const Parser<T>& pt)
 {
 	return many1(pt) | yield(List<T>());
 }
 template<typename T>
-Parser< List<T> > many1(const Parser<T>& pt)
+inline Parser< List<T> > many1(const Parser<T>& pt)
 {
 	return pt >>= [=] (const T& t) {
 		return many(pt) >>= [=] (const List<T>& ts) {
@@ -533,7 +570,7 @@ Parser< List<T> > many1(const Parser<T>& pt)
 #if 0
 //imperative version of many
 template<typename T>
-Parser< List<T> > several(const Parser<T>& pt)
+inline Parser< List<T> > several(const Parser<T>& pt)
 {
 	return Parser< List<T> > ([=] (const String& in) {
 			List<T> lt;
@@ -552,11 +589,11 @@ Parser< List<T> > several(const Parser<T>& pt)
 
 //we can generalize several to use a lambda to accumulate results
 template<
-	typename T,
-	typename L,
-	typename F
+	typename T, //type of the parser
+	typename L, //type to accumulate in
+	typename F //function to accumulate with
 >
-Parser<L> accumulate(const F& f, const Parser<T>& pt, const L& l)
+inline Parser<L> accumulate(const Parser<T>& pt, const L& l, const F& f)
 {
 	return Parser<L> (
 		[=] (const String& in) {
@@ -572,59 +609,38 @@ Parser<L> accumulate(const F& f, const Parser<T>& pt, const L& l)
 		}
 	);
 }
-//accumulate implies some kind of sum,
-//however if the output is a list,
-//we are putting the results into another container
-//infact we are changing the monadic category
+
+
+//and if we want to accumulate into a trivial value
 template<
-	typename M,
+	typename L,
 	typename T,
 	typename F
 >
-Parser<M> mmap(const F& f, const Parser<T>& pt, const M& m)
+inline Parser<L> accumulate(const Parser<T>& pt, const F& f)
 {
-	return Parser<M> (
-		[&] (const String& in) {
-			String finalOut = in;
-			auto rt = parse(pt, in);
-			M mc = m;
-			while (not rt.empty) {
-				f(mc, rt.value);
-				finalOut = rt.out;
-				rt = parse(pt, rt.out);
-			}
-			return some(mc, finalOut);
-		}
-	);
-}
-template<
-	typename M,
-	typename T,
-	typename F
->
-Parser<M> mmap(const F& f, const Parser<T>& pt)
-{
-	return mmap(f, pt, M());
+	return accumulate(pt, L(), f);
 }
 template<typename T>
-Parser< List<T> > several(const Parser<T>& pt)
+inline Parser< List<T> > several(const Parser<T>& pt)
 {
-	return mmap< List<T> >(
+	return accumulate< List<T> >(
+		pt,
 		[=] (List<T>& l, const T& t) {
 			l.push_back(t);
-		},
-		pt
+			return l;
+		}
 	);
 }
 
 template<typename T>
-Parser<uint> freq(const Parser<T>& pt)
+inline Parser<uint> freq(const Parser<T>& pt)
 {
 	return accumulate(
+		pt >> yield(1U), 0U,
 		[=] (const uint s, const uint t) -> uint {
 			return s + t;
-		},
-		pt >> yield(1U), 0U
+		}
 	);
 }
 
@@ -633,7 +649,7 @@ template<typename T>
 using Freq = std::pair<T, uint>;
 
 //many parsers can be described in terms of a sat
-Parser<char> sat(const auto& pred)
+inline Parser<char> sat(const auto& pred)
 {
 	return item >>= [=] (const char c) {
 		if (not pred(c)) return failure<char>;
@@ -643,9 +659,19 @@ Parser<char> sat(const auto& pred)
 
 const auto isSpace = [=] (const char c) { return c == ' ';};
 
-const auto char_(const char c)
+inline const auto char_(const char c)
 {
 	return sat([=] (const char x) {return c == x;});
+}
+//and we may want to drop a character
+inline Parser<void> drop(const char c) {return char_(c) >> yield();}
+
+//and sometimes drop whole strings
+//and recursion makes it easier to think and define
+inline Parser<void> drop(const String& s)
+{
+	if (s.size() == 0) return yield();
+	return char_(s[0]) >> drop(s.substr(1));
 }
 
 const auto space = many(sat(isSpace)) >> yield();
@@ -658,7 +684,7 @@ const auto period = char_('.');
 
 //remove space
 template <typename T>
-Parser<T> token(const Parser<T>& pt)
+inline Parser<T> token(const Parser<T>& pt)
 {
 	return space >>= [=] () {
 		return pt >>= [=] (const T& t) {
@@ -671,7 +697,7 @@ Parser<T> token(const Parser<T>& pt)
 
 
 //regex enabled parsers
-Parser<String> capture(const String& pattern)
+inline Parser<String> capture(const String& pattern)
 {
 	return Parser<String> (
 		[=] (const String& in) {
@@ -681,9 +707,42 @@ Parser<String> capture(const String& pattern)
 				return some(matches[1].str(), matches[2].str());
 			return empty<String>;
 		}
-							
 	);
 }
+
+//for nicer syntax
+
+
+template<typename R, typename T>
+struct Combinator
+{
+	Combinator(const std::function<R(T)>& f) :
+		_combined(f)
+	{}
+	std::function<R(T)> _combined;
+
+	Parser<R> operator()(const Parser<T>& pt) const
+	{
+		return pt >>= [this] (const T& t) {
+			return_(_combined(t));
+		};
+	}
+};
+
+template<typename T>
+struct do_
+{
+	template<
+		typename Func,
+		typename S = typename std::result_of<Func&(T)>::type
+	>
+	static Combinator<S, T> yield(const Func& f)
+	{
+		return Combinator<S, T>(f);
+	}
+
+};
+
 
 }
 /* namespace Expression */
