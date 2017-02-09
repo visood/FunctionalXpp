@@ -313,8 +313,8 @@ TEST_CASE(
 	INFO("parse uintx in hello world: " << r0.value << ", " << r0.out);
 	REQUIRE(r0.empty);
 
-	const auto twoTimes = do_<uint>::yield(
-		[] (const uint u) {return 2 * u;}
+	const auto twoTimes = do_< Parser<uint32_t> >::yield(
+		[] (const auto u) {return 2 * u;}
 	);
 
 	const auto r = parse(twoTimes(uintx), "1212");

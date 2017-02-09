@@ -186,6 +186,7 @@ template< typename T >
 using Parser = std::function< ParsedResult<T>(String) >;
 
 
+
 //having a type defined for the Parser will make the code
 //more expressive, though we will provide facility to use
 //plain lambdas as Parsers ... we will simply need template code
@@ -713,6 +714,20 @@ inline Parser<String> capture(const String& pattern)
 //for nicer syntax
 
 
+#if 0
+template<typename R, typename T, typename... Rest>
+struct Combinator
+{
+	Combinator(const std::function<R(T, Rest...)>& f) :
+		_combined(f)
+	{}
+	std::function<R(T, Rest...)> _combined;
+
+	Parser<R> parse(const Parser<T>& pt, )
+
+}
+#endif
+
 template<typename R, typename T>
 struct Combinator
 {
@@ -729,12 +744,14 @@ struct Combinator
 	}
 };
 
-template<typename T>
+template<typename PT>
 struct do_
 {
 	template<
 		typename Func,
-		typename S = typename std::result_of<Func&(T)>::type
+		typename RT = typename std::result_of<PT&(String)>::type,
+		typename T  = typename RT::type,
+		typename S  = typename std::result_of<Func&(T)>::type
 	>
 	static Combinator<S, T> yield(const Func& f)
 	{
