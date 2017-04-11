@@ -89,7 +89,7 @@ def configure_gcc_5(conf):
                          '-Wextra',
                          '-Wconversion',
                          '-O3',
-                         '-std=c++17']
+                         '-std=c++14']
     conf.define('RELEASE', 1)
     #print ("environment release\n")
     #print(conf.all_envs['release'])
@@ -183,7 +183,7 @@ def configure_bak(conf):
 def configure(conf):
     printProcess("Configuring gcc")
     configure_gcc(conf)
-    conf.setenv("bebo")
+    conf.setenv("bebo") #seemingly, env name can be anything here --- used as a seperator
     printProcess("Configuring gcc-5")
     configure_gcc_5(conf)
     conf.setenv("buba")
