@@ -11,7 +11,10 @@
 #include "TupleFrame.h"
 #include "catch.hpp"
 
-TEST_CASE("Database Table typed using a parameter pack", "[DatabaseTable]") {
+TEST_CASE(
+	"Database Table typed using a parameter pack",
+	"[DatabaseTable] [Containers]"
+) {
     using string = std::string;
     std::vector<std::vector<string> > table;
     for (uint i = 0; i != 100; ++i) {

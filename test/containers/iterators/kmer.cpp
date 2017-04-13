@@ -6,7 +6,10 @@
 #include "catch.hpp"
 
 
-TEST_CASE ("Kmer iterator can be used to iterate over the kmers in a vector", "[KmerClassIterator]") {
+TEST_CASE (
+	"Kmer iterator can be used to iterate over the kmers in a vector",
+	"[KmerClassIterator]"
+) {
   std::vector<int> xs(6);
   std::iota(xs.begin(), xs.end(), 0);
   Kmer< std::vector<int>, int, 3 > mer3(xs);

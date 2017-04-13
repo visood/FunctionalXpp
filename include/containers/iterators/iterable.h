@@ -4,39 +4,45 @@
 	Vishal Sood
 */
 
+#if 0
+#include <iterator>
+
+#define SELF(CONCRETE_DERIVED) = static_cast<const CONCRETE_DERIVED&>(*this)
 
 //for cleaner syntax
 template<typename Iter>
-using Category<Iter> = typename std::iterator_traits<Iter>::iterator_category;
+using Category          = typename std::iterator_traits<Iter>::iterator_category;
 
 template<typename Iter>
-using Difference_type<Iter> = typename std::iterator_traits<Iter>::difference_type;
+using Difference_type   = typename std::iterator_traits<Iter>::difference_type;
 
 template<typename Iter>
-using Value_type<Iter> = typename std::iterator_traits<Iter>::value_type;
+using Value_type        = typename std::iterator_traits<Iter>::value_type;
 
 
 template<typename Iter>
-using Item_type<Iter> = typename std::iterator_traits<Iter>::item_type;
+using Item_type         = typename std::iterator_traits<Iter>::item_type;
 
 template<typename Iter>
-using Reference<Iter> = typename std::iterator_traits<Iter>::reference;
+using Reference         = typename std::iterator_traits<Iter>::reference;
 
 template<typename Iter>
-using Pointer<Iter> = typename std::iterator_traits<Iter>::pointer;
+using Pointer           = typename std::iterator_traits<Iter>::pointer;
 
 
-
+#if 0
 template<typename Derived>
 class iterable
 {
 public:
-	using iterable_type = Derived;
-	using item_type = typename iterable_type::item_type;
-	using index_type = typename iterable_type::state_type;
-	using reference = typename iterable_type::reference;
-	using const_reference = typename iterable_type::const_reference;
-	using difference_type = typename iterable_type::difference_type;
+    using iterable_type     = Derived;
+    using item_type         = typename iterable_type::item_type;
+	using value_type        = typename iterable_type::value_type;
+    using index_type        = typename iterable_type::state_type;
+	using pointer           = typename iterable_type::pointer;
+    using reference         = typename iterable_type::reference;
+    using const_reference   = typename iterable_type::const_reference;
+    using difference_type   = typename iterable_type::difference_type;
 
 	const Derived* self() const {return static_cast<const Derived*>(this);}
 
@@ -50,10 +56,11 @@ public:
 	{
 	public:
 		iterator(const Derived* cp) :
-			_cPtr(c)
+			_cPtr(cp)
 		{}
 		iterator(const iterator& it) :
 			_cPtr(it.container())
+		{}
 		~iterator();
 
 		iterator& operator=(const iterator&) {return *this;}
@@ -93,7 +100,7 @@ public:
 
 	iterator begin() const
 	{
-		return iterator()
+		return iterator();
 	}
 }; /* class iterable */
 
@@ -107,47 +114,55 @@ struct UInts
 	using const_reference = const uint32_t&;
 	using pointer = uint32_t*;
 	using difference_type = uint32_t;
-}
+};
 
 class Naturals : public iterable<Naturals>
 {
 
+};
+#endif
+
+template<typename Base>
+struct Trait
+{
+	template<typename Derived>
+	const static Derived& implementation(const Base& base)
+	{
+		return static_cast<const Derived&>(base);
+	}
 };
 
 template<
 	typename DerivedIterable,
 	typename Predicate
 >
-class Iterable
+class Iterable : public Trait<Iterable>
 {
+	const DerivedIterable& self = implementation(*this);
 public:
-	using iterable_type = DerivedIterable;
-	using value_type = typename iterable_type::value_type;
-	using index_type = typename iterable_type::index_type;
+    using iterable_type = DerivedIterable;
+    using value_type    = typename iterable_type::value_type;
+    using index_type    = typename iterable_type::index_type;
 
 	index_type start() const
 	{
-		const iterable_type& d = static_cast<const iterable_type&>(*this);
-		return d.start(); //do we need a different name for start in d?
+		return self.start(); //do we need a different name for start in d?
 	}
 	std::pair<value_type, index_type> next(const index_type& idx) const
 	{
-		const iterable_type& d = static_cast<const iterable_type&>(*this);
-		if (d.done(idx)) return {d.invalid_value(), d.end_index};
-		auto n = d.next(idx); //do we need a differene name for next in d?
-		//while(not d.pass(n.first)) n = d.next(n.second);
-		if (d.pass(n.first)) return n;
+		if (self.done(idx)) return {self.invalid_value(), self.end_index};
+		auto [value, index] = self.next(idx); //do we need a differene name for next in d?
+		while(not self.pass(value)) [value, index] = self.next(index);
+		if (self.pass(value)) return n;
 		return next(n.second);
 	}
 	bool pass(const value_type& v) const
 	{
-		const iterable_type& d = static_cast<const iterable_type&>(*this);
-		return d.pass(v);
+		return self.pass(v);
 	}
 	bool done(const index_type& idx) const
 	{
-		const iterable_type& d = static_cast<const iterable_type&>(*this);
-		return d.done(idx); //do we need a different name for done in d?
+		return self.done(idx); //do we need a different name for done in d?
 	}
 
 	template<typename Predicate2>
@@ -156,6 +171,12 @@ public:
 		return Filterable<Predicate2>(pred2);
 	}
 }; /* class IterableBase */
+
+
+
+template<typename DerivedIterable>
+using Iterable =  Iterable<DerivedIterable, Idfunc>;
+
 
 struct Naturals : public Iterable<Naturals>
 {
@@ -225,3 +246,7 @@ protected :
 	const iterable_type& _container;
 	value_type _value;
 };
+
+#undef SELF
+
+#endif

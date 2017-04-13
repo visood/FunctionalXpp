@@ -59,7 +59,7 @@ def configure_gcc(conf):
                          '-Wextra',
                          '-Wconversion',
                          '-O3',
-                         '-std=c++17']
+                         '-std=c++1z']
     conf.define('RELEASE', 1)
     #print ("environment release\n")
     #print(conf.all_envs['release'])
@@ -69,7 +69,7 @@ def configure_gcc(conf):
     conf.env.CXXFLAGS = ['-DDEBUG',
                          '-D_GLIBCXX_DEBUG',
                          '-D_GLIBCXX_DEBUG_PEDANTIC',
-                         '-g', '-std=c++17']
+                         '-g', '-std=c++1z']
     conf.define('DEBUG', 1)
     #print ("environment debug\n")
     #print(conf.all_envs['debug'])
@@ -99,7 +99,7 @@ def configure_gcc_5(conf):
     conf.env.CXXFLAGS = ['-DDEBUG',
                          '-D_GLIBCXX_DEBUG',
                          '-D_GLIBCXX_DEBUG_PEDANTIC',
-                         '-g', '-std=c++17']
+                         '-g', '-std=c++1z']
     conf.define('DEBUG', 1)
     #print ("environment debug\n")
     #print(conf.all_envs['debug'])
