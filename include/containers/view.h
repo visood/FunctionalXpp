@@ -10,43 +10,10 @@
 
 
 #include <functional>
-//#include <boost/optional.hpp>
-#include <experimental/optional>
 
 /*
   a container View is specified by a method that processes elements
 */
-
-//using namespace boost;
-using namespace std::experimental;
-
-template< typename in_type, typename out_type >
-struct ElemMapper
-{
-	using function = std::function<out_type(const in_type&)>;
-
-	static optional<out_type> process(const function& mapped,
-									  const optional<in_type>& xopt)
-	{
-		if (xopt) return mapped(xopt.value());
-		return {};
-	}
-};
-
-//specialize element handler for a filter
-template< typename in_type >
-struct ElemFilter
-{
-	using function = std::function<bool(const in_type&)>;
-		
-	static optional<in_type> process(const function& pred,
-									 const optional<in_type>& xopt)
-	{
-		if (xopt and pred(xopt.value())) return xopt;
-		return {};
-	}
-};
-
 
 template<
 	typename in_type,
@@ -252,10 +219,6 @@ public:
 		_elems(xs)
 	{}
 
-	optional<elem_type> process(const elem_type& x) const { return x; }
-
-	//const container<elem_type>& originalElements() const { return _elems; }
-
 	const container<elem_type>& collect() const { return _elems;}
 
 	size_t size() const { return _elems.size(); }
@@ -297,5 +260,5 @@ template<
 	template<typename...> class C,
 	typename T
 	>
-NillView<C, T> view(const C<T>& xs) { return NillView<C, T>(xs); }
+NillView<C, T> collection(const C<T>& xs) { return NillView<C, T>(xs); }
 
