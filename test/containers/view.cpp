@@ -7,7 +7,7 @@
 
 TEST_CASE (
 	"View a std::container",
-	"[BaseView] [Views] [Containers]"
+	"[ViewOps] [Views] [Containers]"
 ){
 	const uint32_t n = 100;
 	std::vector<int> xs(n);
@@ -50,4 +50,28 @@ TEST_CASE (
 	index = 0;
 	for(const uint32_t y : view(xs).filter(is_even).map(square).collect())
 		CHECK( y == xevenSquares[index++]);
+
+	//flatMap
+	index = 0;
+	for(const uint32_t y : view(xevens).flatMap(
+			[] (const int x) -> std::vector<int> {return {x, x + 1}; }
+		).collect())
+		CHECK( y == xs[index++]);
+
+	index = 0;
+	for(const uint32_t y : view(xs).filter(is_even
+		).flatMap(
+			[] (const int x) -> std::vector<int> {return {x, x + 1};}
+		).collect())  {
+		CHECK( y == xs[index++]);
+	}
+
+	index = 0;
+	for(const uint32_t y : view(xs).filter(is_odd
+		).flatMap(
+			[] (const int x) -> std::vector<int> {return {x - 1, x};}
+		).collect())  {
+		CHECK( y == xs[index++]);
+	}
+
 }

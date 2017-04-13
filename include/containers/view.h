@@ -47,21 +47,71 @@ struct ElemFilter
 	}
 };
 
+
 template<
 	typename in_type,
-	template<typename...> class out_container,
-	typename out_elem_type
+	template<typename...> class container,
+	typename out_type
 	>
-struct ElemFlatMapper
+struct MapTransform
 {
-	using function = std::function< out_container<out_elem_type> >(const in_type&)>;
+	using function = std::function<out_type(const in_type&)>;
 
-	
+	static container<out_type> transform(const function& mapped,
+										 const container<in_type>& xs)
+	{
+		container<out_type> ys;
+		for (const in_type& x : xs) ys.push_back( mapped(x) );
+		return ys;
+	}
 };
 
 template<
+	typename in_type,
+	template<typename...> class container
+	>
+struct FilterTransform
+{
+	using function = std::function<bool(const in_type&)>;
+
+	static container<in_type> transform(const function& pred,
+										const container<in_type>& xs)
+	{
+		container<in_type> ys;
+		for (const in_type& x : xs) {
+			if (pred(x)) ys.push_back(x);
+		}
+		return ys;
+	}
+};
+
+template<
+	typename in_type,
+	template<typename...> class container,
+	typename out_type
+	>
+struct FlatMapTransform
+{
+	using function = std::function< container<out_type>(const in_type&)>;
+
+	static container<out_type> transform(const function& fmapped,
+										 const container<in_type>& xs)
+	{
+		container<out_type> ys;
+		for (const in_type& x : xs) {
+			for (const out_type& y : fmapped(x)) {
+				ys.push_back(y);
+			}
+		}
+		return ys;
+	}
+};
+
+
+
+template<
 	typename PrevViewType,
-	typename ElemHandlingPolicy,
+	typename CollectionPolicy,
 	typename MappedType
 	>
 class View
@@ -72,78 +122,61 @@ public:
 	using elem_type   = typename prev_type::mapped_type;
 	using mapped_type = MappedType;
 
-	using elem_handler = ElemHandlingPolicy;
+	using collection_policy = CollectionPolicy;
 
 	template<typename... args>
 	using container = typename prev_type::template container<args...>;
 
 	using this_type   = View<
 		prev_type,
-		ElemHandlingPolicy,
+		collection_policy,
 		mapped_type
 		>;
 
 	template<typename out_type>
 	using NextMapHeadedView = View<
 		this_type,
-		ElemMapper< mapped_type, out_type >,
+		MapTransform< mapped_type, container,  out_type >,
 		out_type
 		>;
 
 	using NextFilterHeadedView = View<
 		this_type,
-		ElemFilter< mapped_type>,
+		FilterTransform< mapped_type, container >,
 		mapped_type
 		>;
 
 	template<typename out_type>
 	using NextFlatMapHeadedView = View<
 		this_type,
-		ElemFlatMapper< mapped_type, container<out_type> >,
+		FlatMapTransform< mapped_type, container, out_type >,
 		out_type
 		>;
 
-	template<typename Processor>
-	View(const PrevViewType& prev, const Processor& processor) :
+	template<typename Transformer>
+	View(const PrevViewType& prev, const Transformer& transformer) :
 		_previously(std::move(prev)),
-		_processor(processor)
+		_transformer(transformer)
 	{}
 
 	View(const this_type& that) :
-		View(that.previously(), that.processor())
+		View(that.previously(), that.transformer())
 	{}
 
 	View(this_type&& that) noexcept :
 		_previously(std::move(that.previously())),
-		_processor(std::move(that.processor()))
+		_transformer(std::move(that.transformer()))
 	{}
 
 	const PrevViewType& previously() { return _previously; }
 
-	const typename elem_handler::function& processor() { return _processor; }
-
-	const container<orig_type>& originalElements() const
-	{
-		return _previously.originalElements();
-		
-	}
+	const typename collection_policy::function& transformer() {return _transformer;}
 
 	size_t size() const { return _previously.size(); }
 
-	optional<mapped_type> process(const orig_type& x) const
-	{
-		return elem_handler::process(_processor, _previously.process(x));
-	}
-
 	container<elem_type> collect() const
 	{
-		container<elem_type> ys;
-		for (const orig_type& x : originalElements()) {
-			const auto yOpt = elem_handler::process(_processor,
-													_previously.process(x));
-			if (yOpt) ys.push_back(yOpt.value());
-		}
-		return ys;
+		return collection_policy::transform(_transformer, _previously.collect());
 	}
 
 	template<
@@ -163,9 +196,20 @@ public:
 		return NextFilterHeadedView(*this, pred);
 	}
 
+	template<
+		typename FlatMapper,
+		typename CR = typename std::result_of<FlatMapper&(mapped_type)>::type,
+		typename R  = typename CR::value_type
+		>
+	NextFlatMapHeadedView<R> flatMap(const FlatMapper& flatMapper) const
+	{
+		return NextFlatMapHeadedView<R>(*this, flatMapper);
+	}
+
+
 private:
 	const PrevViewType& _previously;
-	const typename elem_handler::function _processor;
+	const typename collection_policy::function _transformer;
 };
 
 template<
@@ -187,14 +231,21 @@ public:
 	template<typename out_type>
 	using MapHeadedView = View<
 		this_type,
-		ElemMapper< mapped_type, out_type >,
+		MapTransform< mapped_type, container,  out_type >,
 		out_type
 		>;
 
 	using FilterHeadedView = View<
 		this_type,
-		ElemFilter< mapped_type>,
+		FilterTransform< mapped_type, container >,
 		mapped_type
+		>;
+
+	template<typename out_type>
+	using FlatMapHeadedView = View<
+		this_type,
+		FlatMapTransform< mapped_type, container, out_type >,
+		out_type
 		>;
 
 	NillView(const container<elem_type>& xs) :
@@ -203,7 +254,9 @@ public:
 
 	optional<elem_type> process(const elem_type& x) const { return x; }
 
-	const container<elem_type>& originalElements() const { return _elems; }
+	//const container<elem_type>& originalElements() const { return _elems; }
+
+	const container<elem_type>& collect() const { return _elems;}
 
 	size_t size() const { return _elems.size(); }
 
@@ -222,6 +275,16 @@ public:
 	FilterHeadedView filter(const Predicate& pred) const
 	{
 		return FilterHeadedView(*this, pred);
+	}
+
+	template<
+		typename FlatMapper,
+		typename CR = typename std::result_of<FlatMapper&(mapped_type)>::type,
+		typename R  = typename CR::value_type
+		>
+	FlatMapHeadedView<R> flatMap(const FlatMapper& flatMapper) const
+	{
+		return FlatMapHeadedView<R>(*this, flatMapper);
 	}
 
 private:
