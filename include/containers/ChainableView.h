@@ -3,14 +3,27 @@
   a trait that specifies a chainable view
   no constructors here
 */
+#include <set>
 
 namespace view {
 
-template<typename P, typename M> class MapHeadedView;
-template<typename T> class FilterHeadedView;
-template<typename P, typename M>  class FlatMapHeadedView;
+template<
+	template<typename...> class C,
+	typename P,
+	typename M
+	> class MapHeadedView;
+template<
+	template<typename...> class C,
+	typename P
+	> class FilterHeadedView;
+template<
+	template<typename...> class C,
+	typename P,
+	typename M
+	>  class FlatMapHeadedView;
 
 template<
+	template<typename...> class ContainerType,
 	typename PrevViewType,
 	typename ConcreteView,
 	typename MappedType
@@ -29,30 +42,60 @@ public:
 
 	template<
 		typename Mapper,
-		typename R  = typename std::result_of<Mapper&(MappedType)>::type
+		typename R  = typename std::result_of<Mapper&(MappedType)>::type,
+		typename ViewType =  MapHeadedView< ContainerType, ConcreteView, R >
 		>
-	MapHeadedView< ConcreteView, R > map(const Mapper& nextMapper) const
+	ViewType map(const Mapper& nextMapper) const
 	{
-		return MapHeadedView< ConcreteView, R >(*self(), nextMapper);
+		return ViewType(*self(), nextMapper);
 	}
 
 	template<
-		typename Predicate
+		typename Predicate,
+		typename ViewType = FilterHeadedView< ContainerType, ConcreteView >
 		>
-	FilterHeadedView< ConcreteView > filter(const Predicate& pred) const
+	ViewType filter(const Predicate& pred) const
 	{
-		return FilterHeadedView<ConcreteView>(*self(), pred);
+		return ViewType(*self(), pred);
 	}
 
 	template<
 		typename FlatMapper,
 		typename CR = typename std::result_of<FlatMapper&(MappedType)>::type,
-		typename R  = typename CR::value_type
+		typename R  = typename CR::value_type,
+		typename ViewType = FlatMapHeadedView< ContainerType, ConcreteView, R >
 		>
-	FlatMapHeadedView< ConcreteView, R> flatMap(const FlatMapper& flatMapper) const
+	ViewType flatMap(const FlatMapper& flatMapper) const
 	{
-		return FlatMapHeadedView<ConcreteView, R>(*self(), flatMapper);
+		return ViewType(*self(), flatMapper);
 	}
+
+
+
+	template<typename Predicate>
+	bool any(const Predicate& pred) const
+	{
+		for (const auto& x : self()->collect()) {
+			if (pred(x)) return true;
+		}
+		return false;
+	}
+	template<typename Predicate>
+	bool all(const Predicate& pred) const
+	{
+		for (const auto& x : self()->collect()) {
+			if (not pred(x)) return false;
+		}
+		return true;
+	}
+
+	ContainerType<MappedType> unique() const
+	{
+		std::set<MappedType> xset;
+		for (const auto& x : self()->collect()) xset.insert(x);
+		return {xset.begin(), xset.end()};
+	}
+	
 private :
 	inline const ConcreteView* self() const
 	{
@@ -62,18 +105,21 @@ private :
 
 
 template<
+	template<typename...> class ContainerType ,
 	typename PrevViewType,
 	typename MappedType
+	//template<typename...> class ContainerType = PrevViewType::template container
 	>
 class MapHeadedView : public ChainableView<
+	ContainerType,
 	PrevViewType,
-	MapHeadedView<PrevViewType, MappedType>,
+	MapHeadedView<ContainerType, PrevViewType, MappedType>,
 	MappedType
 	>
 {
 public:
 	using prev_type   = PrevViewType;
-	using this_type   = MapHeadedView<PrevViewType, MappedType>;
+	using this_type   = MapHeadedView<ContainerType, PrevViewType, MappedType>;
 	using orig_type   = typename prev_type::orig_type;
 	using elem_type   = typename prev_type::mapped_type;
 	using mapped_type = MappedType;
@@ -140,17 +186,21 @@ private:
 };
 
 
-template<typename PrevViewType>
+template<
+	template<typename...> class ContainerType,
+	typename PrevViewType
+	//template<typename...> class ContainerType = PrevViewType::template container
+	>
 class FilterHeadedView : public ChainableView<
+	ContainerType,
 	PrevViewType,
-	FilterHeadedView<PrevViewType>,
+	FilterHeadedView<ContainerType, PrevViewType>,
 	typename PrevViewType::mapped_type
 	>
-	
 {
 public :
 	using prev_type   = PrevViewType;
-	using this_type   = FilterHeadedView<PrevViewType>;
+	using this_type   = FilterHeadedView<ContainerType, PrevViewType>;
 	using orig_type   = typename prev_type::orig_type;
 	using elem_type   = typename prev_type::mapped_type;
 	using mapped_type = elem_type;
@@ -218,19 +268,22 @@ private:
 };
 
 template<
+	template<typename...> class ContainerType,
 	typename PrevViewType,
 	typename MappedType
+	//template<typename...> class ContainerType = PrevViewType::template container
 	>
 class FlatMapHeadedView : public ChainableView<
+	ContainerType,
 	PrevViewType,
-	FlatMapHeadedView<PrevViewType, MappedType>,
+	FlatMapHeadedView<ContainerType, PrevViewType, MappedType>,
 	MappedType
 	>
 {
 public:
 
 	using prev_type   = PrevViewType;
-	using this_type   = FlatMapHeadedView<PrevViewType, MappedType>;
+	using this_type   = FlatMapHeadedView<ContainerType, PrevViewType, MappedType>;
 	using orig_type   = typename prev_type::orig_type;
 	using elem_type   = typename prev_type::mapped_type;
 	using mapped_type = MappedType;
@@ -302,6 +355,7 @@ template<
 	typename ElemType
 	>
 class TransparentView : public ChainableView<
+	ContainerType,
 	TransparentView<ContainerType, ElemType>,
 	TransparentView<ContainerType, ElemType>,
 	ElemType
@@ -351,86 +405,5 @@ ViewType collection(const ContainerType<elem_type>& xs)
 {
 	return ViewType(xs);
 }
-
-namespace monadic {
-
-template<
-	template<typename...> class ContainerType,
-	typename elem_type,
-	typename ViewType = TransparentView<ContainerType, elem_type>,
-	typename Mapper,
-	typename R = typename std::result_of<Mapper&(elem_type)>::type,
-	typename NextViewType = MapHeadedView<ViewType, R>
-	>
-ContainerType<R> operator >= (const ContainerType<elem_type>& xs,
-							   const Mapper& mapper)
-{
-	return ViewType(xs).map(mapper).collect();
-}
-
-template<
-	template<typename...> class ContainerType,
-	typename elem_type,
-	typename ViewType = TransparentView<ContainerType, elem_type>,
-	typename Predicate,
-	typename NextViewType = FilterHeadedView<ViewType>
-	>
-ContainerType<elem_type> operator &= (const ContainerType<elem_type>& xs,
-									  const Predicate& pred)
-{
-	return ViewType(xs).filter(pred).collect();
-}
-
-/*
-  monadic bind
-*/
-
-template<
-	template<typename...> class ContainerType,
-	typename elem_type,
-	typename ViewType = TransparentView<ContainerType, elem_type>,
-	typename FlatMapper,
-	typename CR = typename std::result_of<FlatMapper&(elem_type)>::type,
-	typename R  = typename CR::value_type,
-	typename NextViewType = FlatMapHeadedView<ViewType, R>
-	>
-ContainerType<R> operator >>= (const ContainerType<elem_type>& xs,
-							   const FlatMapper& fmapper)
-{
-	return ViewType(xs).flatMap(fmapper).collect();
-}
-
-template<
-	template<typename...> class ContainerType,
-	typename T,
-	typename S
-	>
-ContainerType<S>& operator >> (const ContainerType<T>& xs,
-							   const ContainerType<S>& ys)
-{
-	(void)(xs);
-	return ys;
-}
-
-template<
-	template<typename...> class ContainerType,
-	typename T
-	>
-ContainerType<T> yield(const T& x)
-{
-	return {x};
-}
-
-template<
-	template<typename...> class ContainerType,
-	typename T
-	>
-ContainerType<T> failure(const std::string& msg)
-{
-	(void)(msg); //msg may be used in an error
-	return {};
-}
-
-} //namespace monadic
 
 } //namespace view

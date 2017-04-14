@@ -3,7 +3,7 @@
 #include <array>
 #include "util.h"
 #include "view.h"
-#include "ChainableView.h"
+#include "monadic.h"
 #include "catch.hpp"
 
 TEST_CASE (
@@ -209,5 +209,33 @@ TEST_CASE(
 	
 	index = 0;
 	for (const int x : xs1)
+		CHECK(x == xs[index++]);
+}
+
+TEST_CASE(
+	"view collection operations",
+	"[view-functions][views][containers]"
+)
+{
+	const uint32_t n = 1000;
+	std::vector<int> xs(n);
+	std::iota(xs.begin(), xs.end(), 0);
+
+	const auto even = [] (const int x) {return x % 2 == 0;};
+	const auto odd  = [] (const int x) {return x % 2 == 1;};
+
+	CHECK(view::collection(xs).filter(even).all(even));
+	CHECK(not view::collection(xs).filter(even).any(odd));
+	CHECK(view::collection(xs).filter(odd).all(odd));
+	CHECK(not view::collection(xs).filter(odd).any(even));
+
+	const auto xrepeats = view::collection(xs
+	).flatMap([] (const int x) -> std::vector<int> {return {x, x, x};}
+	);
+
+	CHECK(xrepeats.size() == 3 * n);
+
+	size_t index = 0;
+	for (const int x : xrepeats.unique())
 		CHECK(x == xs[index++]);
 }
