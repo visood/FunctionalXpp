@@ -82,13 +82,12 @@ TEST_CASE(
 	"[chainableViews] [views] [containers]"
 )
 {
-	using namespace collection;
 	
 	const uint32_t n = 10;
 	std::vector<int> xs(n);
 	std::iota(xs.begin(), xs.end(), 0);
 	
-	const auto xview = view(xs);
+	const auto xview = view::collection(xs);
 
 	CHECK(xview.size() == n);
 
@@ -100,12 +99,12 @@ TEST_CASE(
 				   
 	std::cout << "chained collected from view map" << std::endl;
 	uint32_t index = 0;
-	for(const uint32_t y : view(xs).map(square).collect())
+	for(const uint32_t y : view::collection(xs).map(square).collect())
 		CHECK(y == xsquares[index++]);
 	std::cout << "=========================================" << std::endl;
 
 	std::cout << "view map, collect later" << std::endl;
-	const auto xsquaresView = view(xs).map(square);
+	const auto xsquaresView = view::collection(xs).map(square);
 	CHECK(not xsquaresView.hasBeenCollected());
 	index = 0;
 	for(const uint32_t y : xsquaresView.collect())
@@ -131,7 +130,7 @@ TEST_CASE(
 
 	index = 0;
 	const auto is_even = [] (const int x) {return x % 2 == 0; };
-	for(const uint32_t y : view(xs).filter(is_even).collect())
+	for(const uint32_t y : view::collection(xs).filter(is_even).collect())
 		CHECK( y == xevens[index++]);
 
 	std::vector<int> xevenSquares = xsquares;
@@ -141,36 +140,44 @@ TEST_CASE(
 	);
 
 	index = 0;
-	for(const uint32_t y : view(xs).map(square).filter(is_even).collect())
-		CHECK( y == xevenSquares[index++]);
+	for(
+		const uint32_t y : view::collection(xs
+		).map(square
+		).filter(is_even
+		).collect()
+	) CHECK( y == xevenSquares[index++]);
 
 	index = 0;
-	for(const uint32_t y : view(xs).filter(is_even).map(square).collect())
-		CHECK( y == xevenSquares[index++]);
+	for(
+		const uint32_t y : view::collection(xs
+		).filter(is_even
+		).map(square
+		).collect()
+	) CHECK( y == xevenSquares[index++]);
 
 	//flatMap
 	index = 0;
-	for(const uint32_t y : view(xevens).flatMap(
-			[] (const int x) -> std::vector<int> {return {x, x + 1}; }
-		).collect())
-		CHECK( y == xs[index++]);
+	for(
+		const uint32_t y : view::collection(xevens
+		).flatMap([] (const int x) -> std::vector<int> {return {x, x + 1}; }
+		).collect()
+	) CHECK( y == xs[index++]);
 
 	index = 0;
-	for(const uint32_t y : view(xs).filter(is_even
-		).flatMap(
-			[] (const int x) -> std::vector<int> {return {x, x + 1};}
-		).collect())  {
-		CHECK( y == xs[index++]);
-	}
+	for(
+		const uint32_t y : view::collection(xs
+		).filter(is_even
+		).flatMap([] (const int x) -> std::vector<int> {return {x, x + 1};}
+		).collect()
+	) CHECK( y == xs[index++]); 
 
 	index = 0;
-	for(const uint32_t y : view(xs).filter(is_odd
-		).flatMap(
-			[] (const int x) -> std::vector<int> {return {x - 1, x};}
-		).collect())  {
-		CHECK( y == xs[index++]);
-	}
-
+	for(
+		const uint32_t y : view::collection(xs
+		).filter(is_odd
+		).flatMap([] (const int x) -> std::vector<int> {return {x - 1, x};}
+		).collect()
+	) CHECK( y == xs[index++]);  
 }
 
 TEST_CASE(
@@ -178,15 +185,15 @@ TEST_CASE(
 	"[viewJoin] [views] [containers]"
 )
 {
-	using namespace collection;
 	
 	const uint32_t n = 10000;
 	std::vector<int> xs(n);
 	std::iota(xs.begin(), xs.end(), 0);
 	
 	const auto even = [] (const int x) { return x % 2 == 0; };
-	const auto ys = view(xs).filter(even).collect();
+	const auto ys = view::collection(xs).filter(even).collect();
 
+	using namespace view::monadic;
 	const auto zs = ys >>= [] (const int y) ->std::vector<int> {return {y, y+1};};
 
 	uint32_t index = 0;

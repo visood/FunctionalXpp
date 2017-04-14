@@ -4,7 +4,7 @@
   no constructors here
 */
 
-namespace collection {
+namespace view {
 
 template<typename P, typename M> class MapHeadedView;
 template<typename T> class FilterHeadedView;
@@ -347,34 +347,20 @@ template<
 	typename elem_type,
 	typename ViewType =  TransparentView<ContainerType, elem_type>
 	>
-ViewType view(const ContainerType<elem_type>& xs)
+ViewType collection(const ContainerType<elem_type>& xs)
 {
 	return ViewType(xs);
 }
 
-} //namespace
+namespace monadic {
 
 template<
 	template<typename...> class ContainerType,
 	typename elem_type,
-	typename ViewType = collection::TransparentView<ContainerType, elem_type>,
-	typename Mapper,
-	typename R  = typename std::result_of<Mapper&(elem_type)>::type,
-	typename NextViewType = collection::MapHeadedView<ViewType, R>
-	>
-NextViewType operator | (const ContainerType<elem_type>& xs,
-						 const Mapper& mapper)
-{
-	return ViewType(xs).map(mapper);
-}
-
-template<
-	template<typename...> class ContainerType,
-	typename elem_type,
-	typename ViewType = collection::TransparentView<ContainerType, elem_type>,
+	typename ViewType = TransparentView<ContainerType, elem_type>,
 	typename Mapper,
 	typename R = typename std::result_of<Mapper&(elem_type)>::type,
-	typename NextViewType = collection::MapHeadedView<ViewType, R>
+	typename NextViewType = MapHeadedView<ViewType, R>
 	>
 ContainerType<R> operator >= (const ContainerType<elem_type>& xs,
 							   const Mapper& mapper)
@@ -385,9 +371,9 @@ ContainerType<R> operator >= (const ContainerType<elem_type>& xs,
 template<
 	template<typename...> class ContainerType,
 	typename elem_type,
-	typename ViewType = collection::TransparentView<ContainerType, elem_type>,
+	typename ViewType = TransparentView<ContainerType, elem_type>,
 	typename Predicate,
-	typename NextViewType = collection::FilterHeadedView<ViewType>
+	typename NextViewType = FilterHeadedView<ViewType>
 	>
 ContainerType<elem_type> operator &= (const ContainerType<elem_type>& xs,
 									  const Predicate& pred)
@@ -402,11 +388,11 @@ ContainerType<elem_type> operator &= (const ContainerType<elem_type>& xs,
 template<
 	template<typename...> class ContainerType,
 	typename elem_type,
-	typename ViewType = collection::TransparentView<ContainerType, elem_type>,
+	typename ViewType = TransparentView<ContainerType, elem_type>,
 	typename FlatMapper,
 	typename CR = typename std::result_of<FlatMapper&(elem_type)>::type,
 	typename R  = typename CR::value_type,
-	typename NextViewType = collection::FlatMapHeadedView<ViewType, R>
+	typename NextViewType = FlatMapHeadedView<ViewType, R>
 	>
 ContainerType<R> operator >>= (const ContainerType<elem_type>& xs,
 							   const FlatMapper& fmapper)
@@ -444,3 +430,7 @@ ContainerType<T> failure(const std::string& msg)
 	(void)(msg); //msg may be used in an error
 	return {};
 }
+
+} //namespace monadic
+
+} //namespace view
