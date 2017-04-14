@@ -126,12 +126,9 @@ public:
 		if (not _hasBeenCollected) {
 			for (const elem_type& x : _previously.collect()) {
 				_elements.push_back( _mapped(x) );
-				std::cout << x << " not collected, value is "
-						  << _mapped(x) << std::endl;
 			}
 			_hasBeenCollected = true;
 		}
-		else std::cout << " collected " << std::endl;
 		return _elements;
 	}
 
@@ -212,7 +209,7 @@ public :
 		}
 		return _elements;
 	}
-	
+
 private:
 	const   PrevViewType         _previously;
 	const   function             _predicate;
@@ -231,7 +228,7 @@ class FlatMapHeadedView : public ChainableView<
 	>
 {
 public:
-	
+
 	using prev_type   = PrevViewType;
 	using this_type   = FlatMapHeadedView<PrevViewType, MappedType>;
 	using orig_type   = typename prev_type::orig_type;
@@ -357,3 +354,93 @@ ViewType view(const ContainerType<elem_type>& xs)
 
 } //namespace
 
+template<
+	template<typename...> class ContainerType,
+	typename elem_type,
+	typename ViewType = collection::TransparentView<ContainerType, elem_type>,
+	typename Mapper,
+	typename R  = typename std::result_of<Mapper&(elem_type)>::type,
+	typename NextViewType = collection::MapHeadedView<ViewType, R>
+	>
+NextViewType operator | (const ContainerType<elem_type>& xs,
+						 const Mapper& mapper)
+{
+	return ViewType(xs).map(mapper);
+}
+
+template<
+	template<typename...> class ContainerType,
+	typename elem_type,
+	typename ViewType = collection::TransparentView<ContainerType, elem_type>,
+	typename Mapper,
+	typename R = typename std::result_of<Mapper&(elem_type)>::type,
+	typename NextViewType = collection::MapHeadedView<ViewType, R>
+	>
+ContainerType<R> operator >= (const ContainerType<elem_type>& xs,
+							   const Mapper& mapper)
+{
+	return ViewType(xs).map(mapper).collect();
+}
+
+template<
+	template<typename...> class ContainerType,
+	typename elem_type,
+	typename ViewType = collection::TransparentView<ContainerType, elem_type>,
+	typename Predicate,
+	typename NextViewType = collection::FilterHeadedView<ViewType>
+	>
+ContainerType<elem_type> operator &= (const ContainerType<elem_type>& xs,
+									  const Predicate& pred)
+{
+	return ViewType(xs).filter(pred).collect();
+}
+
+/*
+  monadic bind
+*/
+
+template<
+	template<typename...> class ContainerType,
+	typename elem_type,
+	typename ViewType = collection::TransparentView<ContainerType, elem_type>,
+	typename FlatMapper,
+	typename CR = typename std::result_of<FlatMapper&(elem_type)>::type,
+	typename R  = typename CR::value_type,
+	typename NextViewType = collection::FlatMapHeadedView<ViewType, R>
+	>
+ContainerType<R> operator >>= (const ContainerType<elem_type>& xs,
+							   const FlatMapper& fmapper)
+{
+	return ViewType(xs).flatMap(fmapper).collect();
+}
+
+template<
+	template<typename...> class ContainerType,
+	typename T,
+	typename S
+	>
+ContainerType<S>& operator >> (const ContainerType<T>& xs,
+							   const ContainerType<S>& ys)
+{
+	(void)(xs);
+	return ys;
+}
+
+template<
+	template<typename...> class ContainerType,
+	typename T
+	>
+ContainerType<T> yield(const T& x)
+{
+	return {x};
+}
+
+template<
+	template<typename...> class ContainerType,
+	typename T
+	>
+ContainerType<T> failure(const std::string& msg)
+{
+	(void)(msg); //msg may be used in an error
+	return {};
+}

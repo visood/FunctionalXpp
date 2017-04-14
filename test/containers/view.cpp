@@ -172,3 +172,35 @@ TEST_CASE(
 	}
 
 }
+
+TEST_CASE(
+	"bind operator using views",
+	"[viewJoin] [views] [containers]"
+)
+{
+	using namespace collection;
+	
+	const uint32_t n = 10000;
+	std::vector<int> xs(n);
+	std::iota(xs.begin(), xs.end(), 0);
+	
+	const auto even = [] (const int x) { return x % 2 == 0; };
+	const auto ys = view(xs).filter(even).collect();
+
+	const auto zs = ys >>= [] (const int y) ->std::vector<int> {return {y, y+1};};
+
+	uint32_t index = 0;
+	for (const int z : zs)
+		CHECK(z == xs[index++]);
+
+	index = 0;
+	for (const int u : xs >= [] (const int x) {return 2 * x;} )
+		CHECK(u == 2 * xs[index++]);
+
+	const auto xs1 = (xs &= [] (const int x) {return x % 2 == 0;}) >>= [] (
+		const int x) -> std::vector<int> { return {x, x + 1}; };
+	
+	index = 0;
+	for (const int x : xs1)
+		CHECK(x == xs[index++]);
+}
