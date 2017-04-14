@@ -4,6 +4,8 @@
   no constructors here
 */
 
+namespace collection {
+
 template<typename P, typename M> class MapHeadedView;
 template<typename T> class FilterHeadedView;
 template<typename P, typename M>  class FlatMapHeadedView;
@@ -16,7 +18,14 @@ template<
 class ChainableView
 {
 public:
-	size_t size() const { return self()->collect().size(); }
+	//size_t size() const { return self()->collect().size(); }
+
+	size_t size() const
+	{
+		if (not self()->hasBeenCollected())
+			self()->collect();
+		return self()->elements().size();
+	}
 
 	template<
 		typename Mapper,
@@ -74,36 +83,63 @@ public:
 	template<typename... args>
 	using container = typename prev_type::template container<args...>;
 
+	MapHeadedView(const PrevViewType& prev,
+				  const function& transform,
+				  const container<mapped_type>& elems, 
+				  const bool wasCollected) :
+		_previously(prev),
+		_mapped(transform),
+		_elements(elems),
+		_hasBeenCollected(wasCollected)
+	{}
+
 	template<typename Transformer>
-	MapHeadedView(const PrevViewType& prev, const Transformer& transform) :
+	MapHeadedView(const PrevViewType& prev,
+				  const Transformer& transform) : 
 		_previously(std::move(prev)),
-		_mapped(transform)
+		_mapped(transform),
+		_elements({}),
+		_hasBeenCollected(false)
 	{}
 
 	MapHeadedView(const this_type& that) :
-		MapHeadedView(that.previously(), that.transformer())
+		MapHeadedView(that.previously(),
+					  that.transformer(),
+					  that.elements(),
+					  that.hasBeenCollected())
 	{}
 
 	MapHeadedView(this_type&& that) noexcept :
 		_previously(std::move(that.previously())),
-		_mapped(std::move(that.transformer()))
+		_mapped(std::move(that.transformer())),
+		_elements(std::move(that.elements())),
+		_hasBeenCollected(std::move(that.hasBeenCollected()))
 	{}
 
-	const PrevViewType& previously() const {return _previously;}
+    const PrevViewType& previously() const         {return _previously;      }
+    const function& transformer() const            {return _mapped;          }
+    const container<mapped_type>& elements() const {return _elements;        }
+    bool hasBeenCollected() const                  {return _hasBeenCollected;}
 
-	const function& transformer() const {return _mapped;}
-
-	container<mapped_type> collect() const
+	const container<mapped_type> collect() const
 	{
-		container<mapped_type> ys;
-		for (const elem_type& x : _previously.collect())
-			ys.push_back( _mapped(x) );
-		return ys;
+		if (not _hasBeenCollected) {
+			for (const elem_type& x : _previously.collect()) {
+				_elements.push_back( _mapped(x) );
+				std::cout << x << " not collected, value is "
+						  << _mapped(x) << std::endl;
+			}
+			_hasBeenCollected = true;
+		}
+		else std::cout << " collected " << std::endl;
+		return _elements;
 	}
 
 private:
-	const PrevViewType _previously;
-	const function     _mapped;
+	const   PrevViewType           _previously;
+	const   function               _mapped;
+	mutable container<mapped_type> _elements;
+	mutable bool                   _hasBeenCollected = false;
 };
 
 
@@ -128,35 +164,60 @@ public :
 	using function = std::function<bool(const elem_type&)>;
 
 	template<typename Predicate>
-	FilterHeadedView(const PrevViewType& prev, const Predicate& pred) :
+	FilterHeadedView(const PrevViewType& prev,
+					 const Predicate& pred,
+					 const container<elem_type>& elems,
+					 const bool wasCollected) :
 		_previously(std::move(prev)),
-		_predicate(pred)
+		_predicate(pred),
+		_elements(std::move(elems)),
+		_hasBeenCollected(wasCollected)
+	{}
+
+	template<typename Predicate>
+	FilterHeadedView(const PrevViewType& prev,
+					 const Predicate& pred) :
+		_previously(std::move(prev)),
+		_predicate(pred),
+		_elements({}),
+		_hasBeenCollected(false)
 	{}
 
 	FilterHeadedView(const this_type& that) :
-		FilterHeadedView(that.previously(), that.predicate())
+		FilterHeadedView(that.previously(),
+						 that.predicate(),
+						 that.elements(),
+						 that.hasBeenCollected())
 	{}
 
 	FilterHeadedView(this_type&& that) noexcept :
 		_previously(std::move(that.previously())),
-		_predicate(std::move(that.predicate()))
+		_predicate(std::move(that.predicate())),
+		_elements(std::move(that.elements())),
+		_hasBeenCollected(std::move(that.hasBeenCollected()))
 	{}
 
 	const PrevViewType& previously() const {return _previously;}
 	const function& predicate() const {return _predicate;}
+	const container<mapped_type>& elements() const {return _elements;}
+	bool hasBeenCollected() const {return _hasBeenCollected;}
 
-	container<elem_type> collect() const
+	const container<elem_type> collect() const
 	{
-		container<elem_type> ys;
-		for (const elem_type& x : _previously.collect()) {
-			if (_predicate(x)) ys.push_back(x);
+		if (not _hasBeenCollected) {
+			for (const elem_type& x : _previously.collect()) {
+				if (_predicate(x)) _elements.push_back(x);
+			}
+			_hasBeenCollected = true;
 		}
-		return ys;
+		return _elements;
 	}
 	
 private:
-	const PrevViewType _previously;
-	const function     _predicate;
+	const   PrevViewType         _previously;
+	const   function             _predicate;
+	mutable container<elem_type> _elements;
+	mutable bool                 _hasBeenCollected = true;
 };
 
 template<
@@ -182,38 +243,61 @@ public:
 
 	using function  = std::function<container<mapped_type>(const elem_type&)>;
 
+	FlatMapHeadedView(const PrevViewType& prev,
+					  const function& transform,
+					  const container<mapped_type>& elems,
+					  const bool wasCollected) :
+		_previously(prev),
+		_mapped(transform),
+		_elements(elems),
+		_hasBeenCollected(wasCollected)
+	{}
+
 	template<typename Transformer>
-	FlatMapHeadedView(const PrevViewType& prev, const Transformer& transform) :
+	FlatMapHeadedView(const PrevViewType& prev,
+					  const Transformer& transform) :
 		_previously(std::move(prev)),
-		_mapped(transform)
+		_mapped(transform),
+		_elements({}),
+		_hasBeenCollected(false)
 	{}
 
 	FlatMapHeadedView(const this_type& that) :
-		FlatMapHeadedView(that.previously(), that.transformer())
+		FlatMapHeadedView(that.previously(),
+						  that.transformer(),
+						  that.elements(),
+						  that.hasBeenCollected())
 	{}
 
 	FlatMapHeadedView(this_type&& that) noexcept :
 		_previously(std::move(that.previously())),
-		_mapped(std::move(that.transformer()))
+		_mapped(std::move(that.transformer())),
+		_elements(std::move(that.elements())),
+		_hasBeenCollected(that.hasBeenCollected())
 	{}
 
-	const PrevViewType& previously() const {return _previously;}
-
-	const function& transformer() const {return _mapped;}
+    const PrevViewType& previously() const         {return _previously;      }
+    const function& transformer() const            {return _mapped;          }
+    const container<mapped_type>& elements() const {return _elements;        }
+    bool hasBeenCollected() const                  {return _hasBeenCollected;}
 
 	container<mapped_type> collect() const
 	{
-		container<mapped_type> ys;
-		for (const elem_type& x : _previously.collect()) {
-			for (const mapped_type& y : _mapped(x))
-				ys.push_back(y);
+		if (not _hasBeenCollected) {
+			for (const elem_type& x : _previously.collect()) {
+				for (const mapped_type& y : _mapped(x))
+					_elements.push_back(y);
+			}
+			_hasBeenCollected = true;
 		}
-		return ys;
+		return _elements;
 	}
 
 private:
-	const PrevViewType _previously;
-	const function     _mapped;
+	const PrevViewType             _previously;
+	const function                 _mapped;
+	mutable container<mapped_type> _elements;
+	mutable bool                   _hasBeenCollected;
 };
 
 template<
@@ -249,6 +333,10 @@ public:
 		_elements(that.collect())
 	{}
 
+	bool hasBeenCollected() const {return true;}
+
+	const container<elem_type>& elements() const {return _elements;}
+
 	const container<elem_type>& collect() const { return _elements; }
 
 public:
@@ -266,3 +354,6 @@ ViewType view(const ContainerType<elem_type>& xs)
 {
 	return ViewType(xs);
 }
+
+} //namespace
+

@@ -260,5 +260,5 @@ template<
 	template<typename...> class C,
 	typename T
 	>
-NillView<C, T> collection(const C<T>& xs) { return NillView<C, T>(xs); }
+NillView<C, T> collectionView(const C<T>& xs) { return NillView<C, T>(xs); }
 
