@@ -1,11 +1,11 @@
 /*
-	Views, lazy container views.
+	Views.
+	These are lazy views on containers.
 	A view should accumulate operations on the elements of a container, map,
 	filter, and flatMap.
+
 	A view applied to a container should be an iterable object.
 
-	To process a container element we will need either a ElementMapper,
-	or a ElementFilterer
 */
 
 
@@ -94,7 +94,7 @@ public:
 	template<typename... args>
 	using container = typename prev_type::template container<args...>;
 
-	using this_type   = View<
+	using this_type = View<
 		prev_type,
 		collection_policy,
 		mapped_type
@@ -130,18 +130,19 @@ public:
 		View(that.previously(), that.transformer())
 	{}
 
-	View(this_type&& that) noexcept :
-		_previously(std::move(that.previously())),
-		_transformer(std::move(that.transformer()))
+	View(this_type&& that)
+		noexcept :
+		 _previously(std::move(that.previously())),
+		 _transformer(std::move(that.transformer()))
 	{}
 
-	const PrevViewType& previously() { return _previously; }
+	const PrevViewType& previously() const { return _previously; }
 
-	const typename collection_policy::function& transformer() {return _transformer;}
+	const typename collection_policy::function& transformer() const {return _transformer;}
 
 	size_t size() const { return _previously.size(); }
 
-	container<elem_type> collect() const
+	container<mapped_type> collect() const
 	{
 		return collection_policy::transform(_transformer, _previously.collect());
 	}
@@ -175,7 +176,7 @@ public:
 
 
 private:
-	const PrevViewType& _previously;
+	const PrevViewType _previously;
 	const typename collection_policy::function _transformer;
 };
 

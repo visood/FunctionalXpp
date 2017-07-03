@@ -1,0 +1,16 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+import glob, os
+
+def build(bld):
+    cppFiles = set(file.split("/")[-1] for file in glob.glob(bld.path.abspath() + "/*.cpp"))
+    INCLUDES = ["../../../" + x for x in bld.env.INCLUDES_REL] + bld.env.INCLUDES_ABS
+
+    bld.objects(
+        source = cppFiles,
+        target = "TestExperimental",
+        cxxflags = bld.env.CXXFLAGS,
+        includes = INCLUDES,
+        lib = bld.env.LDFLAGS_N
+    )

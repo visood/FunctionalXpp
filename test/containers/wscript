@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 import glob
-DIRS = "iterators"
+DIRS = "iterators experimental"
 
 exclude = []
 

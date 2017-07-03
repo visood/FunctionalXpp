@@ -6,20 +6,20 @@ DIRS = "utils database containers"
 def build(bld):
         INCLUDES = ["../" + x for x in bld.env.INCLUDES_REL] + bld.env.INCLUDES_ABS
 	bld.program(source="main.cpp",
-                    use = ["TestContainers",
-                           "TestIterators",
-                           "TestDatabase",
-                           "TestUtils"],
+                use = ["TestContainers",
+                       "TestIterators",
+                       "TestDatabase",
+                       "TestUtils",
+                       "TestExperimental"],
                            #"containers",
                            #"iterators",
                            #"database",
                            #"utils"],
-                    target="test",
-                    stlib = bld.env.STLIB, #static lib - needed if not default
-                    cxxflags = bld.env.CXXFLAGS,
-                    includes = INCLUDES,
-                    lib = bld.env.LDFLAGS_N
-                    )
+                target="test",
+                stlib = bld.env.STLIB, #static lib - needed if not default
+                cxxflags = bld.env.CXXFLAGS,
+                includes = INCLUDES,
+                lib = bld.env.LDFLAGS_N)
 
 	if bld.cmd != "clean":
 		from waflib import Logs
