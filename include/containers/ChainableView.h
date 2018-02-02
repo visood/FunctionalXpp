@@ -95,6 +95,12 @@ public:
 		for (const auto& x : self()->collect()) xset.insert(x);
 		return {xset.begin(), xset.end()};
 	}
+
+	bool contains(const MappedType& x) const
+	{
+		return any([&x] (const auto& y) {return y == x;});
+	}
+
 	
 private :
 	inline const ConcreteView* self() const
