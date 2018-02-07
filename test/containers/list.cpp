@@ -1,5 +1,6 @@
 #include <iostream>
 #include "list.h"
+#include "maybe.h"
 #include "catch.hpp"
 
 using namespace Persistent::List;
