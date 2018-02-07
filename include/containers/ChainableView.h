@@ -320,9 +320,9 @@ public:
 
 	FlatMapHeadedView(const this_type& that) :
 		FlatMapHeadedView(that.previously(),
-						  that.transformer(),
-						  that.elements(),
-						  that.hasBeenCollected())
+											that.transformer(),
+											that.elements(),
+											that.hasBeenCollected())
 	{}
 
 	FlatMapHeadedView(this_type&& that) noexcept :

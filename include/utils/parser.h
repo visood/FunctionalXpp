@@ -51,7 +51,9 @@ template<typename T>
 inline const T& head(const List<T>& list) { return *begin(list);}
 
 template<typename T>
-inline List<T> tail(const List<T>& list) { return List<T>(++begin(list), end(list));}
+inline List<T> tail(const List<T>& list) {
+	return List<T>(++begin(list), end(list));
+}
 
 
 

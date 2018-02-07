@@ -68,7 +68,8 @@ TEST_CASE (
 	}
 
 	index = 0;
-	for(const uint32_t y : collectionView(xs).filter(is_odd
+	for(const uint32_t y : collectionView(xs).filter(
+			is_odd
 		).flatMap(
 			[] (const int x) -> std::vector<int> {return {x - 1, x};}
 		).collect())  {
@@ -194,7 +195,7 @@ TEST_CASE(
 	const auto ys = view::collection(xs).filter(even).collect();
 
 	using namespace view::monadic;
-	const auto zs = ys >>= [] (const int y) ->std::vector<int> {return {y, y+1};};
+	const auto zs = ys >>= [] (const int y)->std::vector<int> {return {y, y+1};};
 
 	uint32_t index = 0;
 	for (const int z : zs)

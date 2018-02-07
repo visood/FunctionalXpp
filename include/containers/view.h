@@ -74,8 +74,6 @@ struct FlatMapTransform
 	}
 };
 
-
-
 template<
 	typename PrevViewType,
 	typename CollectionPolicy,
@@ -261,4 +259,3 @@ template<
 	typename T
 	>
 NillView<C, T> collectionView(const C<T>& xs) { return NillView<C, T>(xs); }
-

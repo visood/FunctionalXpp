@@ -14,14 +14,14 @@ import glob, os
 from waflib.Configure import conf
 
 def printProcess(msg, l = 70):
-    lmsg = (l - len(msg))/2
+    lmsg = int((l - len(msg))/2)
     msgToPrint = lmsg * "-" + msg + lmsg * "-"
     if len(msgToPrint) < l:
         msgToPrint = msgToPrint.split(" ")[0] + "  " + msgToPrint.split(" ")[1]
 
-    print l * "="
-    print msgToPrint
-    print l * "="
+    print(l * "=")
+    print(msgToPrint)
+    print(l * "=")
 
 def global_env(ctx):
     ctx.env.appname = APPNAME
