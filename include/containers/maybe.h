@@ -47,4 +47,12 @@ Maybe<ElemType> Some(const ElemType& x)
 
 template<typename ElemType>
 Maybe<ElemType> None;
+
+
+/* can we define a function to switch computation on a Maybe?
+ReturnType branch(const Maybe<ElemType>& mb,
+				  const FuncType& handleSome,
+				  const FuncType& handleNone)
+*/
 }}
+

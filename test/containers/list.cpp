@@ -127,3 +127,18 @@ TEST_CASE(
 	l4.tail().printCellUsage();
 
 }
+
+TEST_CASE(
+	"make a persistent list with",
+	"[PersistentListMaker][PersistentLists][Containers]"
+) {
+	const auto l0 = make_list(1, 2, 3, 4, 5);
+	CHECK(l0.size() == 5);
+	CHECK(head(l0) == 1);
+	CHECK(head(tail(l0)) == 2);
+	CHECK(head(tail(tail(l0))) == 3);
+	CHECK(head(tail(tail(tail(l0)))) == 4);
+	CHECK(head(tail(tail(tail(tail(l0))))) == 5);
+	CHECK(tail(tail(tail(tail(tail(l0))))).nil());
+}
+

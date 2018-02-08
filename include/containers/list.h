@@ -5,84 +5,87 @@
 namespace Persistent{ namespace List{
 
 template<typename ElemType>
+class List;
+
+template<typename ElemType>
 class ConsCell
 {
 public:
 	using this_type = ConsCell<ElemType>;
 
 	ConsCell() = default;
-	ConsCell(const ElemType& x, //cannot have a reference here -- unique pointer will own
-					 const std::shared_ptr<this_type>& next) :
-		_elem(std::make_unique<ElemType>()),
-		_next(next)
+	ConsCell(const ElemType& x,
+					 const std::shared_ptr<this_type>& nextPtr) :
+		_elemPtr(std::make_unique<ElemType>()),
+		_nextPtr(nextPtr)
 	{
-		*_elem = x;
+		*_elemPtr = x;
 	}
-	const ElemType& elem() const {return *_elem;}
-	const this_type& next() const {return *_next;}
-	const std::shared_ptr<this_type>& nextPtr() const { return _next;}
-	//const std::shared_ptr<const this_type>& next() const {return _next;}
+	const ElemType&  elem() const {return *_elemPtr;}
+	const this_type& next() const {return *_nextPtr;}
 
-	bool empty() const {return _elem ? false : true;}
+	bool empty() const {return _elemPtr ? false : true;}
 
+	friend class List<ElemType>;
 private:
-	std::unique_ptr<ElemType>  _elem; //this should be nullptr by default
-	std::shared_ptr<this_type> _next; //this should be nullptr by default
+	std::unique_ptr<ElemType>  _elemPtr; //this should be nullptr by default
+	std::shared_ptr<this_type> _nextPtr; //this should be nullptr by default
 };
 
 template<typename ElemType>
 const ConsCell<ElemType> Nil; /*can this be constexpr?*/
 
 template<typename ElemType>
-class List
+class List 
 {
 public:
 	using ConsCellType = ConsCell<ElemType>;
 
-	List()
+	List() :
+		_headCellPtr(std::make_shared<ConsCellType>())
 	{
-		const auto hc = std::make_shared<ConsCellType>();
-		*hc = ConsCellType();
-		_headCell = hc;
+		//const auto hc = std::make_shared<ConsCellType>();
+		//*hc = ConsCellType();
+		*_headCellPtr = ConsCellType();
 	}
 
-	List(const std::shared_ptr<ConsCellType>& headCell):
-		_headCell(headCell)
+	List(const std::shared_ptr<ConsCellType>& headCellPtr):
+		_headCellPtr(headCellPtr)
 	{}
 
-	bool empty() const {return _headCell->empty();}
+	bool empty() const {return _headCellPtr->empty();}
+
+	bool nil() const {return _headCellPtr->empty();}
 
 	int size() const {return empty() ? 0 : 1 + tail().size();}
 
-	const ConsCellType& headCell() const {return *_headCell; }
-
-	const ElemType& head() const { return _headCell->elem();}
+	const ElemType& head() const { return *(_headCellPtr->_elemPtr); }
 
 	List<ElemType> tail() const
 	{
 		if (empty()) 
 			throw std::out_of_range("tail called on an empty list !!!");
 
-		return List<ElemType>(_headCell->nextPtr());
+		return List<ElemType>(_headCellPtr->_nextPtr);
 	}
 
 	List<ElemType> cons(const ElemType& x) const
 	{
 		std::cout << "cons " << x << " onto a list" << std::endl
 							<< "with head element ";
-		if (_headCell and not _headCell->empty())
-			std::cout << _headCell->elem();
+		if (_headCellPtr and not _headCellPtr->empty())
+			std::cout << _headCellPtr->elem();
 		else
 			std::cout << "null";
 
 		std::cout << std::endl
 							<< " and head cell used in "
-							<< _headCell.use_count() << " instances."
+							<< _headCellPtr.use_count() << " instances."
 							<< std::endl;
 		const auto xPtr = std::make_shared<ConsCellType>();
-		*xPtr = ConsCellType(x, _headCell);
+		*xPtr = ConsCellType(x, _headCellPtr);
 		std::cout << "consed, head used in "
-							<< _headCell.use_count() << " instances."
+							<< _headCellPtr.use_count() << " instances."
 							<< std::endl;
 		return List<ElemType>(xPtr);
 	}
@@ -92,22 +95,24 @@ public:
 		if (empty())
 			std::cout << "done" << std::endl;
 		else {
-			std::cout << "head with elem " << _headCell->elem() << ", "
-								<< "cell usage: " << _headCell.use_count() << ", ";
+			std::cout << "head with elem " << *(_headCellPtr->_elemPtr) << ", "
+								<< "cell usage: " << _headCellPtr.use_count() << ", ";
 			std::cout << "( head-cell's next has usage "
-								<< _headCell->nextPtr().use_count()
+								<< _headCellPtr->_nextPtr.use_count()
 								<< "); ";
 			tail().printCellUsage();
 		}
 	}
 	
 private:
-	std::shared_ptr<ConsCellType> _headCell;
-	//static const ConsCellType _nil;
+	std::shared_ptr<ConsCellType> _headCellPtr;
 };
 
-//template<typename ElemType>
-//const ConsCell<ElemType> List<ElemType>::_nil = ConsCell<ElemType>();
+template<typename ElemType>
+const ElemType& head(const List<ElemType>& l) {return l.head();}
+
+template<typename ElemType>
+const List<ElemType> tail(const List<ElemType>& l) { return l.tail(); }
 
 template<typename ElemType>
 List<ElemType> cons(const ElemType& x, const List<ElemType>& ys)
@@ -115,6 +120,16 @@ List<ElemType> cons(const ElemType& x, const List<ElemType>& ys)
 	return ys.cons(x);
 }
 
+template<typename ElemType>
+List<ElemType> make_list(const ElemType& x)
+{
+	return cons(x, List<ElemType>());
+}
+template<typename HeadType, typename... TailTypes>
+List<HeadType> make_list(const HeadType& h, TailTypes... tailArgs)
+{
+	return cons(h, make_list(tailArgs...));
+}
 
 
 } /*namespace List*/ } /*namespace Persistent*/
