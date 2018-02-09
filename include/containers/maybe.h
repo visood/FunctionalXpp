@@ -21,7 +21,7 @@ public:
 
 		return *_elem;
 	}
-	bool containsElem() const {return _elem ? true : false;}
+	bool empty() const {return _elem ? false : true;}
 
 private:
 	std::unique_ptr<ElemType> _elem;
@@ -30,13 +30,13 @@ private:
 template<typename ElemType>
 bool hasNone(const Maybe<ElemType>& mb)
 {
-	return not mb.containsElem();
+	return mb.empty();
 }
 
 template<typename ElemType>
 bool hasSome(const Maybe<ElemType>& mb)
 {
-	return mb.containsElem();
+	return not mb.empty();
 }
 
 template<typename ElemType>

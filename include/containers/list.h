@@ -71,22 +71,8 @@ public:
 
 	List<ElemType> cons(const ElemType& x) const
 	{
-		std::cout << "cons " << x << " onto a list" << std::endl
-							<< "with head element ";
-		if (_headCellPtr and not _headCellPtr->empty())
-			std::cout << _headCellPtr->elem();
-		else
-			std::cout << "null";
-
-		std::cout << std::endl
-							<< " and head cell used in "
-							<< _headCellPtr.use_count() << " instances."
-							<< std::endl;
 		const auto xPtr = std::make_shared<ConsCellType>();
 		*xPtr = ConsCellType(x, _headCellPtr);
-		std::cout << "consed, head used in "
-							<< _headCellPtr.use_count() << " instances."
-							<< std::endl;
 		return List<ElemType>(xPtr);
 	}
 
@@ -130,7 +116,5 @@ List<HeadType> make_list(const HeadType& h, TailTypes... tailArgs)
 {
 	return cons(h, make_list(tailArgs...));
 }
-
-
 } /*namespace List*/ } /*namespace Persistent*/
 
