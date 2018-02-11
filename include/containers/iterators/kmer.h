@@ -1,62 +1,110 @@
 #pragma once
 
-template <typename Iterable, typename ValueType, size_t k>
-class Kmer {
-  //using ValueType = Iterable;
-  using BaseItrType = typename Iterable::iterator;
+/*
+  we want to call Kmers with the following syntax
+*/
+template<
+	size_t k,
+	typename IterableElements
+	>
+class Kmers;
+
+/*
+  however, we want to deduce the Iterable type
+*/
+
+template <
+	size_t k,
+	template<typename...> class Iterable,
+	typename ValueType
+	>
+class Kmers< k, Iterable<ValueType> >
+{
+
+	using BaseItrType = typename Iterable<ValueType>::const_iterator;
 public:
-Kmer( Iterable xs): _xs(xs) {}
-  //uint k() { return _k;}
-  uint size() { return (uint) (_xs.size() - k + 1);}
-  class iterator : public std::iterator<std::forward_iterator_tag, ValueType>  {
-  public:
-  iterator(const BaseItrType bitr,
-           const BaseItrType xitr,
-           const BaseItrType eitr)
-    : _bitr(bitr), _xitr(xitr), _eitr(eitr) {}
-  iterator(const BaseItrType bitr,
-           const BaseItrType eitr)
-    : _bitr(bitr), _xitr(bitr), _eitr(eitr) {}
+	Kmers( const Iterable<ValueType>& xs): _data(xs) {}
 
-    std::array<ValueType, k> operator*() {
-      std::array<ValueType, k>  elem;
-      std::copy(_xitr, _xitr + k, std::begin(elem));
-      return elem;
-    }
+	uint size() { return (uint) (_data.size() - k + 1);}
 
-    iterator& operator++() {
-      _xitr++;
-      return *this;
-    }
+	class iterator : public std::iterator<std::forward_iterator_tag, ValueType>
+	{
+	public:
+		iterator(BaseItrType bitr,
+				 BaseItrType xitr,
+				 BaseItrType eitr) :
+			_bgnItr(bitr),
+			_curItr(xitr),
+			_endItr(eitr)
+		{}
 
-    BaseItrType xitr() { return _xitr;}
+		iterator(BaseItrType bitr,
+				 BaseItrType eitr) :
+			_bgnItr(bitr),
+			_curItr(bitr),
+			_endItr(eitr)
+		{}
 
-    bool operator!=(iterator& that) {
-      return _xitr != that.xitr();
-    }
+		std::array<ValueType, k> operator*()
+		{
+			std::array<ValueType, k>  elem;
+			std::copy(_curItr, _curItr + k, std::begin(elem));
+			return elem;
+		}
 
-    const BaseItrType& start() { _xitr = _bitr; return _bitr;}
-    BaseItrType& next() { _xitr++; return _xitr;}
-    bool done() { return _xitr < _eitr;}
+		const iterator& operator++() {_curItr++; return *this;}
 
-  private:
-    const BaseItrType _bitr;
-    BaseItrType _xitr;
-    const BaseItrType _eitr;
-    //const uint _k;
-  };
+		BaseItrType currentIterator() const { return _curItr;}
 
-  iterator begin() {return iterator(std::begin(_xs), std::begin(_xs),  std::end(_xs));}
-  iterator end() {return iterator(std::begin(_xs), std::end(_xs) - k + 1, std::end(_xs) - k + 1);}
+		bool equals(const iterator& that) const
+		{
+			return _curItr == that.currentIterator();
+		}
+
+		bool operator==(const iterator& that) const
+		{
+			return _curItr == that.currentIterator();
+		}
+
+		bool operator!=(iterator& that) const
+		{
+			return _curItr != that.currentIterator();
+		}
+
+		const BaseItrType& start() { _curItr = _bgnItr; return _bgnItr;}
+
+		BaseItrType& next() { _curItr++; return _curItr;}
+
+		bool done() const { return _curItr < _endItr;}
+
+	private:
+		const BaseItrType _bgnItr;
+		BaseItrType _curItr;
+		const BaseItrType _endItr;
+		//const uint _k;
+	};
+
+	iterator begin()
+	{
+		return iterator(std::begin(_data),
+						std::begin(_data),
+						std::end(_data));
+	}
+	iterator end()
+	{
+		return iterator(std::begin(_data),
+						std::end(_data) - k + 1,
+						std::end(_data) - k + 1);
+	}
+
 private:
-  //const uint _k;
-  Iterable _xs;
+	const Iterable<ValueType> _data;
 };
 
 template < typename Iterator, typename VoidOpr >
 void for_each(Iterator& itr, const VoidOpr& func) {
-  while (not itr.done() ) {
-    func(*itr);
-    ++itr;
-  }
+	while (not itr.done() ) {
+		func(*itr);
+		++itr;
+	}
 }
