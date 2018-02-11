@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <clocale>
 #include <regex>
+#include "stdwrapped.h"
 
 
 //macros for nicer parser syntax
@@ -15,9 +16,11 @@
 #define return_(x) return yield(x)
 
 
+using namespace std::wrapped;
+
 namespace Expression
 {
-//using namespace Monadic;
+/*
 using String = std::string;
 
 //a const list can be a good example to design an immutable,
@@ -123,6 +126,7 @@ inline String to_string(const List<T>& l)
 	return std::to_string(head(l)) + to_string(tail(l));
 }
 
+*/
 
 
 //to store the success of a parser
@@ -561,6 +565,9 @@ inline Parser< List<T> > many(const Parser<T>& pt)
 {
 	return many1(pt) | yield(List<T>());
 }
+
+using ::operator >>;
+
 template<typename T>
 inline Parser< List<T> > many1(const Parser<T>& pt)
 {
@@ -673,8 +680,11 @@ inline Parser<void> drop(const char c) {return char_(c) >> yield();}
 //and recursion makes it easier to think and define
 inline Parser<void> drop(const String& s)
 {
+	return s.size() == 0 ? yield() : char_(s[0]) >> drop(s.substr(1));
+	/*
 	if (s.size() == 0) return yield();
 	return char_(s[0]) >> drop(s.substr(1));
+	*/
 }
 
 const auto space = many(sat(isSpace)) >> yield();
