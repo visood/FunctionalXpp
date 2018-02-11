@@ -20,113 +20,6 @@ using namespace std::wrapped;
 
 namespace Expression
 {
-/*
-using String = std::string;
-
-//a const list can be a good example to design an immutable,
-//persistent data structure in C++.
-// a wrapper around std::list that employs monadic relationships
-template <typename T>
-using List = std::list<T>;
-//we do not want to create a wrapper class, instead we use operators
-template< typename T>
-List<T> unit(const T& t) { return List<T>(t);}
-
-//the list should be cons list, we will use the stream operator
-//this is not the ideal solution
-//ideally we would like >> to create a new (persistent, immutable) list
-//checkout implementation attempt in list.h
-template<typename T>
-inline List<T>& operator >> (const T& head, List<T>& tail)
-{
-	tail.push_front(head);
-	return tail;
-}
-
-template<typename T>
-inline const List<T>& operator >> (const T& head, List<T> tail)
-{
-	tail.push_front(head);
-	return std::move(tail);
-}
-
-template<typename T>
-inline const T& head(const List<T>& list) { return *begin(list);}
-
-template<typename T>
-inline List<T> tail(const List<T>& list) {
-	return List<T>(++begin(list), end(list));
-}
-
-
-
-//for a list monad we need to flatten a list of lists
-template<typename T>
-inline List<T> flatten(List< List<T> >& llt)
-{
-	List<T> ltout;
-	auto it = ltout.begin();
-	for (const auto& lt : llt) {
-		ltout.insert(it, lt);
-	}
-	return ltout;
-}
-//an explicit map
-template<
-	typename T,
-	typename F,
-	typename S = typename std::result_of<F&(T)>::type
->
-inline List<S> map(const F f, const List<T>& ts)
-{
-	List<S> ss;
-	for (const auto& t : ts) ss.push_back(f(t));
-	return ts;
-}
-//bind
-template<
-	typename T,
-	typename F,
-	typename S = typename std::result_of<F&(T)>::value_type
->
-inline List<S>& operator >>= (
-	List<T>& ts,
-	const F& fst
-)
-{
-	return flatten( map(fst, ts));
-}
-
-template<typename T>
-List<T> nil = List<T>();
-
-template<typename T>
-inline bool operator==(const List<T>& l1, const List<T>& l2)
-{
-	if (l1.empty()) return l2.empty();
-	if (l2.empty()) return false;
-	return head(l1) == head(l2) and tail(l1) == tail(l2);
-}
-
-template<typename T>
-inline void print(const List<T>& l)
-{
-	if (l.empty()) {
-		std::cout << std::endl;
-		return;
-	}
-	std::cout << head(l) << ", ";
-	print(tail(l));
-}
-
-template<typename T>
-inline String to_string(const List<T>& l)
-{
-	if (l.empty())	return String();
-	return std::to_string(head(l)) + to_string(tail(l));
-}
-
-*/
 
 
 //to store the success of a parser
@@ -167,7 +60,7 @@ struct ParsedResult<void>
 	bool empty;
 };
 
-//utility functions to construct ParsedSuccesss
+//utility functions to construct ParsedResult
 template<typename T>
 ParsedResult<T> some(const T& t, const String& s)
 {

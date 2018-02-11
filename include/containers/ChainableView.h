@@ -70,8 +70,6 @@ public:
 		return ViewType(*self(), flatMapper);
 	}
 
-
-
 	template<typename Predicate>
 	bool any(const Predicate& pred) const
 	{
