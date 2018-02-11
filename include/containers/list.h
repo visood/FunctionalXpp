@@ -118,3 +118,12 @@ List<HeadType> make_list(const HeadType& h, TailTypes... tailArgs)
 }
 } /*namespace List*/ } /*namespace Persistent*/
 
+template<
+	typename ElemType,
+	typename ListType = Persistent::List::List<ElemType>
+	>
+inline const ListType operator >> (const ElemType& head, const ListType& ys)
+{
+	return ys.cons(head);
+}
+

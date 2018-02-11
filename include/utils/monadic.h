@@ -1,4 +1,3 @@
-
 #include "util.h"
 #include <list>
 //for the parser to be a monad we follow haskell

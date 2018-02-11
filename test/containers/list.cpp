@@ -76,56 +76,138 @@ TEST_CASE (
 
 		l3.printCellUsage();
 	}
+	SECTION("operator >> to cons list"){
+		const auto l0 = List<int>();
+		CHECK(l0.size() == 0);
+		const auto l1 = 1 >> l0;
+		std::cout << "l1 first: ";
+		l1.printCellUsage();
+		CHECK(l1.size() == 1);
+		CHECK(l1.head() == 1);
+		CHECK(l1.tail().empty());
+		std::cout << "l1 second: ";
+		l1.printCellUsage();
+		const auto l2 = 2 >> l1;
+		std::cout << "l2 first: ";
+		l2.printCellUsage();
+		std::cout << "l1 third: ";
+		l1.printCellUsage();
+		CHECK(l2.size() == 2);
+		CHECK(l2.head() == 2);
+		CHECK(l2.tail().head() == 1);
+		CHECK(l2.tail().tail().empty());
+
+		std::cout << "l2 second: ";
+		l2.printCellUsage();
+
+		const auto l3 = 3 >> l1;
+		CHECK(l3.size() == 2);
+		CHECK(l3.head() == 3);
+		CHECK(l3.tail().head() == 1);
+		CHECK(l3.tail().tail().empty());
+
+		std::cout << "l2 third: ";
+		l2.printCellUsage();
+
+		l3.printCellUsage();
+	}
 }
 
 TEST_CASE(
 	"shared data in persistent lists",
 	"[PersistentSharedData][PersistentLists][Containers]"
 ) {
-	const auto l0 = List<int>();
-	std::cout << "l0 created: ";
-	l0.printCellUsage();
+	SECTION("cons") {
+		const auto l0 = List<int>();
+		std::cout << "l0 created: ";
+		l0.printCellUsage();
 
-	const auto l1 = cons(1, l0);
-	std::cout << "l1 created: ";
-	l1.printCellUsage();
-	std::cout << "from the point of view of l0: ";
-	l0.printCellUsage();
+		const auto l1 = cons(1, l0);
+		std::cout << "l1 created: ";
+		l1.printCellUsage();
+		std::cout << "from the point of view of l0: ";
+		l0.printCellUsage();
 
-	const auto l2 = cons(2, l1);
-	std::cout << "l2 created: ";
-	l2.printCellUsage();
-	std::cout << "from the point of view of l1: ";
-	l1.printCellUsage();
+		const auto l2 = cons(2, l1);
+		std::cout << "l2 created: ";
+		l2.printCellUsage();
+		std::cout << "from the point of view of l1: ";
+		l1.printCellUsage();
 
 
-	const auto l3 = cons(3, l1);
-	std::cout << "l3 created: ";
-	l3.printCellUsage();
-	std::cout << "from the point of view of l1: ";
-	l1.printCellUsage();
+		const auto l3 = cons(3, l1);
+		std::cout << "l3 created: ";
+		l3.printCellUsage();
+		std::cout << "from the point of view of l1: ";
+		l1.printCellUsage();
 
-	std::cout << "before l4, l3 tail";
-	l3.tail().printCellUsage();
-	const auto l4 = cons(4, l1);
-	std::cout << "l4 created: ";
-	l4.printCellUsage();
-	std::cout << "after l4, l3 tail";
-	l3.tail().printCellUsage();
-	std::cout << "from the point of view of l2: ";
-	l2.printCellUsage();
-	std::cout << "from the point of view of l1: ";
-	l1.printCellUsage();
+		std::cout << "before l4, l3 tail";
+		l3.tail().printCellUsage();
+		const auto l4 = cons(4, l1);
+		std::cout << "l4 created: ";
+		l4.printCellUsage();
+		std::cout << "after l4, l3 tail";
+		l3.tail().printCellUsage();
+		std::cout << "from the point of view of l2: ";
+		l2.printCellUsage();
+		std::cout << "from the point of view of l1: ";
+		l1.printCellUsage();
 
-	std::cout << "l4 tail usage";
-	l4.tail().printCellUsage();
+		std::cout << "l4 tail usage";
+		l4.tail().printCellUsage();
 
-	std::cout << "l4 tail usage";
-	l4.tail().printCellUsage();
+		std::cout << "l4 tail usage";
+		l4.tail().printCellUsage();
 
-	std::cout << "l4 tail usage";
-	l4.tail().printCellUsage();
+		std::cout << "l4 tail usage";
+		l4.tail().printCellUsage();
+	}
+	SECTION(">>") {
+		const auto l0 = List<int>();
+		std::cout << "l0 created: ";
+		l0.printCellUsage();
 
+		const auto l1 = 1 >> l0;
+		std::cout << "l1 created: ";
+		l1.printCellUsage();
+		std::cout << "from the point of view of l0: ";
+		l0.printCellUsage();
+		CHECK(true);
+
+		const auto l2 = 2 >> l1;
+		std::cout << "l2 created: ";
+		l2.printCellUsage();
+		std::cout << "from the point of view of l1: ";
+		l1.printCellUsage();
+
+
+		const auto l3 = 3 >> l1;
+		std::cout << "l3 created: ";
+		l3.printCellUsage();
+		std::cout << "from the point of view of l1: ";
+		l1.printCellUsage();
+
+		std::cout << "before l4, l3 tail";
+		l3.tail().printCellUsage();
+		const auto l4 = 4 >> l1;
+		std::cout << "l4 created: ";
+		l4.printCellUsage();
+		std::cout << "after l4, l3 tail";
+		l3.tail().printCellUsage();
+		std::cout << "from the point of view of l2: ";
+		l2.printCellUsage();
+		std::cout << "from the point of view of l1: ";
+		l1.printCellUsage();
+
+		std::cout << "l4 tail usage";
+		l4.tail().printCellUsage();
+
+		std::cout << "l4 tail usage";
+		l4.tail().printCellUsage();
+
+		std::cout << "l4 tail usage";
+		l4.tail().printCellUsage();
+	}
 }
 
 TEST_CASE(
