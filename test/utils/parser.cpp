@@ -244,10 +244,7 @@ TEST_CASE(
 	const auto pv = Parser<void> (
 		[=] (const String& in) {
 			const auto rx = parse(char_('x'), in);
-			if (rx.empty) return empty<void>;
-			return some(rx.out);
-			//if (rx.empty) return ParsedResult<void>();
-			//return ParsedResult<void>(rx.out);
+			return (rx.empty ? empty<void> : some(rx.out));
 		}
 	);
 
@@ -265,17 +262,23 @@ TEST_CASE(
 	REQUIRE(parse(pvh, "hello").empty);
 
 
-	const auto pvh2 = pv >>= [=] () {return yield();};
-	const auto rvh2 = parse(pvh, "xworld");
+	const auto pvh2 = pv >>= [=]() {return yield();};
+	const auto rvh2 = parse(pvh2, "xworld");
 	REQUIRE( not rvh2.empty);
 	CHECK( rvh2.out == "world");
 	REQUIRE(parse(pvh2, "hello").empty);
 
-	const auto pvh3 = pv >>= [=] () {return pv;};
+	const auto pvh3 = pv >>= [=]() {return pv;};
 	const auto rvh3 = parse(pvh3, "xxworld");
 	REQUIRE( not rvh3.empty);
-	CHECK( rvh3.out == "orld");
+	CHECK( rvh3.out == "world");
 	REQUIRE(parse(pvh3, "xworld").empty);
+
+	const auto pvh4 = pvh3 >>= [=]() {return pv;};
+	const auto rvh4 = parse(pvh4, "xxxworld");
+	REQUIRE( not rvh4.empty);
+	CHECK( rvh4.out == "world");
+	REQUIRE( parse(pvh4, "xxworld").empty);
 }
 
 TEST_CASE(

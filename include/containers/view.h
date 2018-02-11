@@ -220,7 +220,7 @@ public:
 
 	const container<elem_type>& collect() const { return _elems;}
 
-	size_t size() const { return _elems.size(); }
+	std::size_t size() const { return _elems.size(); }
 
 	template<
 		typename Mapper,

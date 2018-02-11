@@ -5,7 +5,7 @@ DIRS = "utils database containers"
 
 def build(bld):
     INCLUDES = ["../" + x for x in bld.env.INCLUDES_REL] + bld.env.INCLUDES_ABS
-	bld.program(source="main.cpp",
+    bld.program(source="main.cpp",
                 use = [
                     "TestContainers",
                     "TestIterators",
@@ -16,15 +16,15 @@ def build(bld):
                     #"iterators",
                     #"database",
                     #"utils"
-                ]
+                ],
                 target="test",
                 stlib = bld.env.STLIB, #static lib - needed if not default
                 cxxflags = bld.env.CXXFLAGS,
                 includes = INCLUDES,
                 lib = bld.env.LDFLAGS_N)
-  if bld.cmd != "clean":
-	  from waflib import Logs
-	  bld.logger = Logs.make_logger("test.log", "build") #to get a clean output
-	  bld.logger = None
+    if bld.cmd != "clean":
+	    from waflib import Logs
+	    bld.logger = Logs.make_logger("test.log", "build") #to get a clean output
+	    bld.logger = None
 
-  bld.recurse(DIRS)
+    bld.recurse(DIRS)

@@ -75,15 +75,15 @@ def configure_gcc(conf):
     #print(conf.all_envs['debug'])
     #print "-----------------------------------------------------------------------------------------"
 
-def configure_gcc_5(conf):
-    conf.find_program('g++-5', var = 'CXX', mandatory = True)
+def configure_gcc_6(conf):
+    conf.find_program('g++-6', var = 'CXX', mandatory = True)
     conf.load('g++')
-    conf.find_program('gcc-5', var = 'C', mandatory = True)
+    conf.find_program('gcc-6', var = 'C', mandatory = True)
     #conf.load('gcc')
     global_env(conf)
     conf.env.append_unique('STLIB', 'stdc++')
     conf.env.append_unique('LDFLAGS_N', 'stdc++')
-    conf.setenv('alternative-gcc-5', env=conf.env.derive())
+    conf.setenv('alternative-gcc-6', env=conf.env.derive())
     conf.env.CXXFLAGS = ['-Wall',
                          '-Wno-unknown-pragmas',
                          '-Wextra',
@@ -95,7 +95,37 @@ def configure_gcc_5(conf):
     #print(conf.all_envs['release'])
     #print "-----------------------------------------------------------------------------------------"
 
-    conf.setenv('alternative-gcc-5-debug', env=conf.env.derive())
+    conf.setenv('alternative-gcc-6-debug', env=conf.env.derive())
+    conf.env.CXXFLAGS = ['-DDEBUG',
+                         '-D_GLIBCXX_DEBUG',
+                         '-D_GLIBCXX_DEBUG_PEDANTIC',
+                         '-g', '-std=c++14']
+    conf.define('DEBUG', 1)
+    #print ("environment debug\n")
+    #print(conf.all_envs['debug'])
+    #print "-----------------------------------------------------------------------------------------"
+
+def configure_gcc_5(conf):
+    conf.find_program('g++-5', var = 'CXX', mandatory = True)
+    conf.load('g++')
+    conf.find_program('gcc-5', var = 'C', mandatory = True)
+    #conf.load('gcc')
+    global_env(conf)
+    conf.env.append_unique('STLIB', 'stdc++')
+    conf.env.append_unique('LDFLAGS_N', 'stdc++')
+    conf.setenv('back-gcc-5', env=conf.env.derive())
+    conf.env.CXXFLAGS = ['-Wall',
+                         '-Wno-unknown-pragmas',
+                         '-Wextra',
+                         '-Wconversion',
+                         '-O3',
+                         '-std=c++14']
+    conf.define('RELEASE', 1)
+    #print ("environment release\n")
+    #print(conf.all_envs['release'])
+    #print "-----------------------------------------------------------------------------------------"
+
+    conf.setenv('back-gcc-5-debug', env=conf.env.derive())
     conf.env.CXXFLAGS = ['-DDEBUG',
                          '-D_GLIBCXX_DEBUG',
                          '-D_GLIBCXX_DEBUG_PEDANTIC',
@@ -183,9 +213,15 @@ def configure_bak(conf):
 def configure(conf):
     printProcess("Configuring gcc")
     configure_gcc(conf)
+
     conf.setenv("bebo") #seemingly, env name can be anything here --- used as a seperator
+    printProcess("Configuring gcc-6")
+    configure_gcc_6(conf)
+
+    conf.setenv("bebe") #seemingly, env name can be anything here --- used as a seperator
     printProcess("Configuring gcc-5")
     configure_gcc_5(conf)
+
     conf.setenv("buba")
     printProcess("Configuring clang")
     configure_clang(conf)
@@ -201,12 +237,20 @@ class debug(BuildContext):
     variant = 'debug'
 
 class alt_release(BuildContext):
-    cmd = 'build_gcc5_release'
-    variant = 'alternative-gcc-5'
+    cmd = 'build_gcc6_release'
+    variant = 'alternative-gcc-6'
 
 class alt_debug(BuildContext):
+    cmd = 'build_gcc6_debug'
+    variant = 'alternative-gcc-6-debug'
+
+class back_release(BuildContext):
+    cmd = 'build_gcc5_release'
+    variant = 'back-gcc-5'
+
+class back_debug(BuildContext):
     cmd = 'build_gcc5_debug'
-    variant = 'alternative-gcc-5-debug'
+    variant = 'back-gcc-5-debug'
 
 class alt_release(BuildContext):
     cmd = 'build_clang_release'
@@ -224,7 +268,9 @@ def build(bld):
         3. waf build_clang_release\n
         4. waf build_clang_debug\n
         5. waf build_gcc5_release \n
-        6. waf build_gcc5_debug\n""")
+        6. waf build_gcc5_debug\n
+        7. waf build_gcc6_release \n
+        8. waf build_gcc6_debug\n""")
 
     printProcess("Building " + bld.variant)
     bld.recurse(DIRS)

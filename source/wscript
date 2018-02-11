@@ -19,3 +19,5 @@ def build(bld):
                 includes = INCLUDES,
                 lib = bld.env.LDFLAGS_N
         )
+
+        bld.recurse(DIRS)
