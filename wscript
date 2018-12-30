@@ -32,18 +32,16 @@ def global_env(ctx):
                             'dl']
     )
     ctx.env.append_unique('CATCH_PATH', '/usr/local/include/Catch')
-    ctx.env.append_unique("INCLUDES_REL",
-                          ['include',
-                           'include/containers',
-                           'include/containers/iterators',
-                           'include/database',
-                           'include/utils'
-                          ]
-    )
+    ctx.env.append_unique(
+        "INCLUDES_REL",
+        ['include',
+         'include/containers',
+         'include/containers/iterators',
+         'include/database',
+         'include/utils'])
     #ctx.env.INCLUDES_N = ["../../../" + x for x in ctx.env.INCLUDES_REL]
     ctx.env.append_unique('INCLUDES_ABS',
-                           ctx.env.CATCH_PATH[0]
-    )
+                           ctx.env.CATCH_PATH[0])
 
 def configure_gcc(conf):
     conf.find_program('g++', var = 'CXX', mandatory = True)
@@ -188,8 +186,7 @@ def options(opt):
     opt.add_option(
         '--clang',
         action = 'store_true',
-        default = False,
-    )
+        default = False)
 
 
 def configure_bak(conf):

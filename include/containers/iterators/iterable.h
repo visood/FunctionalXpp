@@ -37,9 +37,9 @@ class iterable
 public:
     using iterable_type     = Derived;
     using item_type         = typename iterable_type::item_type;
-	using value_type        = typename iterable_type::value_type;
+		using value_type        = typename iterable_type::value_type;
     using index_type        = typename iterable_type::state_type;
-	using pointer           = typename iterable_type::pointer;
+		using pointer           = typename iterable_type::pointer;
     using reference         = typename iterable_type::reference;
     using const_reference   = typename iterable_type::const_reference;
     using difference_type   = typename iterable_type::difference_type;
