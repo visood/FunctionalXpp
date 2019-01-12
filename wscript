@@ -35,6 +35,7 @@ def global_env(ctx):
     ctx.env.append_unique(
         "INCLUDES_REL",
         ['include',
+         'include/fxpp',
          'include/containers',
          'include/containers/iterators',
          'include/database',

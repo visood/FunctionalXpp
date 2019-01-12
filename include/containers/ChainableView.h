@@ -318,9 +318,9 @@ public:
 
 	FlatMapHeadedView(const this_type& that) :
 		FlatMapHeadedView(that.previously(),
-											that.transformer(),
-											that.elements(),
-											that.hasBeenCollected())
+						  that.transformer(),
+						  that.elements(),
+						  that.hasBeenCollected())
 	{}
 
 	FlatMapHeadedView(this_type&& that) noexcept :
@@ -410,4 +410,5 @@ ViewType collection(const ContainerType<elem_type>& xs)
 	return ViewType(xs);
 }
 
+>>>>>>> 671ad7933edf862204870189d42b7fba95b49b20
 } //namespace view

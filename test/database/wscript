@@ -4,14 +4,18 @@
 import glob, os
 
 def build(bld):
-    cppFiles = set(file.split("/")[-1] for file in glob.glob(bld.path.abspath() + "/*.cpp"))
-    INCLUDES = ["../../" + x for x in bld.env.INCLUDES_REL] + bld.env.INCLUDES_ABS
+    cpp_files\
+        = set(
+            file.split("/")[-1]
+            for file in glob.glob(bld.path.abspath() + "/*.cpp"))
+    INCLUDES\
+        = ["../../" + x for x in bld.env.INCLUDES_REL]\
+        + bld.env.INCLUDES_ABS
 
     bld.objects(
-        source = cppFiles,
+        source = cpp_files,
         use = ["containers", "database", "utils"],
         target = "TestDatabase",
         cxxflags = bld.env.CXXFLAGS,
         includes = INCLUDES,
-        lib = bld.env.LDFLAGS_N
-  )
+        lib = bld.env.LDFLAGS_N)

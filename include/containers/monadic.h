@@ -12,7 +12,7 @@ template<
 	typename NextViewType = MapHeadedView<ContainerType, ViewType, R>
 	>
 ContainerType<R> operator >= (const ContainerType<elem_type>& xs,
-															const Mapper& mapper)
+							  const Mapper& mapper)
 {
 	return ViewType(xs).map(mapper).collect();
 }
@@ -25,7 +25,7 @@ template<
 	typename NextViewType = FilterHeadedView<ContainerType, ViewType>
 	>
 ContainerType<elem_type> operator &= (const ContainerType<elem_type>& xs,
-																			const Predicate& pred)
+									  const Predicate& pred)
 {
 	return ViewType(xs).filter(pred).collect();
 }
@@ -44,7 +44,7 @@ template<
 	typename NextViewType = FlatMapHeadedView<ContainerType, ViewType, R>
 	>
 ContainerType<R> operator >>= (const ContainerType<elem_type>& xs,
-															 const FlatMapper& fmapper)
+							   const FlatMapper& fmapper)
 {
 	return ViewType(xs).flatMap(fmapper).collect();
 }
@@ -55,7 +55,7 @@ template<
 	typename S
 	>
 ContainerType<S>& operator >> (const ContainerType<T>& xs,
-															 const ContainerType<S>& ys)
+							   const ContainerType<S>& ys)
 {
 	(void)(xs);
 	return ys;
