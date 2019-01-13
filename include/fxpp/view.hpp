@@ -2,6 +2,7 @@
   Use CRTP to define chainable views
 */
 #include <set>
+#include <functional>
 
 namespace fxpp {
 template<
@@ -29,12 +30,10 @@ template<
 class ChainableView
 {
 public:
-    size_t size() const
-    {
+    size_t size() const {
         if (not self()->hasBeenCollected())
             self()->collect();
-        return self()->elements().size();
-    }
+        return self()->elements().size(); }
 
     template<
         typename Function,
@@ -94,7 +93,7 @@ public:
         const Predicate& pred
     ) const {
         for (const auto& x : self()->collect()) {
-            if (not(pred(x)) return false;)}
+            if (not(pred(x))) return false;}
         return true;}
 
     ContainerType<ElemType> unique() const
@@ -108,9 +107,9 @@ public:
     {return
         any([&x] (const auto& y) {return y == x;}); }
 private:
-    inline const ConcreteVew* self() const
+    inline const ConcreteView* self() const
     {return
-        static_cast<ConcreteView*>(this); }
+        static_cast<const ConcreteView*>(this); }
 };
 
 template<
@@ -126,18 +125,18 @@ class MapHeadedView : public ChainableView<
 public:
     using prev_type   = PrevViewType;
     using this_type   = MapHeadedView<ContainerType, PrevViewType, MappedType>;
-    using orig_type   = typename prev_type::orig_type;
-    using elem_type   = typename prev_type::mapped_type;
-    using mapped_type = MappedType;
+    using orig_elem_type   = typename prev_type::orig_elem_type;
+    using elem_type   = typename prev_type::out_elem_type;
+    using out_elem_type = MappedType;
     using function    = std::function<MappedType(const elem_type&)>;
 
     template<typename... args>
     using container = typename prev_type::template container<args...>;
 
     MapHeadedView(
-        const PrevViewType,
+        const PrevViewType& prev,
         const function& transform,
-        const container<mapped_type>& elems,
+        const container<out_elem_type>& elems,
         const bool wasCollected
     ) :
         _previously(prev),
@@ -154,7 +153,7 @@ public:
     ):
         _previously(std::move(prev)),
         _mapped(transform),
-        _elemensts({}),
+        _elements({}),
         _hasBeenCollected(false)
     {}
 
@@ -172,13 +171,13 @@ public:
         _elements(std::move(that.elements())),
         _hasBeenCollected(std::move(that.hasBeenCollected()))
     {}
-
-    const PrevViewtype& previously() const         {return _previously;}
+    
+    const PrevViewType& previously() const         {return _previously;}
     const function& transformer() const            {return _mapped;}
-    const container<mapped_type>& elements() const {return _elements;}
+    const container<out_elem_type>& elements() const {return _elements;}
     bool hasBeenCollected() const                  {return _hasBeenCollected;}
 
-    const container<mapped_type> collect() const
+    const container<out_elem_type> collect() const
     {
         if (not _hasBeenCollected) {
             for (const elem_type& x : _previously.collect()) 
@@ -186,25 +185,25 @@ public:
             _hasBeenCollected = true;}
         return _elements;}
 private:
-    const   PrevViewType            _previously;
-    const   function                _mapped;
-    mutable container<mapped_type>  _elements;
-    mutable bool                    _hasBeenCollected = false;
+    const   PrevViewType			 _previously;
+    const   function				 _mapped;
+    mutable container<out_elem_type> _elements;
+    mutable bool					 _hasBeenCollected = false;
 };
 
 template<
     template<typename...> class ContainerType,
     typename PrevViewType>
 class FilterHeadedView : public ChainableView<
-    ContainerTyoe,
+    ContainerType,
     PrevViewType,
-    FilterHeadedView<ContainerTupe, PrevViewType>,
-    typename PrevViewType::mapped_type>
+    FilterHeadedView<ContainerType, PrevViewType>,
+    typename PrevViewType::out_elem_type>
 {
 public:
     using prev_type = PrevViewType;
     using this_type = FilterHeadedView<ContainerType, PrevViewType>;
-    using orig_type = typename prev_type::orig_type;
+    using orig_elem_type = typename prev_type::orig_elem_type;
     using in_elem_type = typename prev_type::out_elem_type;
     using out_elem_type = in_elem_type;
 
@@ -249,7 +248,7 @@ public:
     ) noexcept:
         _previously(std::move(that.previously())),
         _predicate(std::move(that.predicate())),
-        _elements(std::Move(that.elements())),
+        _elements(std::move(that.elements())),
         _hasBeenCollected(std::move(that.hasBeenCollected()))
     {}
 
@@ -282,18 +281,18 @@ class FlatMapHeadedView :
 public:
     using prev_view_type = P;
     using this_type      = FlatMapHeadedView<C, P, M>;
-    using orig_elem_type = typename prev_type::orig_elem_type;
-    using in_elem_type   = typename prev_type::out_elem_type;
+    using orig_elem_type = typename prev_view_type::orig_elem_type;
+    using in_elem_type   = typename prev_view_type::out_elem_type;
     using out_elem_type  = M;
 
     template<typename... args>
-    using container = typename prev_type::template container<args...>;
+    using container = typename prev_view_type::template container<args...>;
 
     using function_type = std::function<container<M>(const in_elem_type&)>;
 
     FlatMapHeadedView(
         const prev_view_type& prev,
-        const fucntion_type& function,
+        const function_type& function,
         const container<out_elem_type>& elems,
         const bool wasCollected
     ): _previously(prev),
@@ -305,7 +304,7 @@ public:
     template<
         typename Transformer>
     FlatMapHeadedView(
-        const PrevViewType& prev,
+        const prev_view_type& prev,
         const Transformer& transform
     ): _previously(std::move(prev)),
        _mapped(transform),
@@ -339,9 +338,9 @@ public:
     container<out_elem_type> collect() const {
         if (not _hasBeenCollected) {
             for (const in_elem_type& x : _previously.collect()) {
-                for (const mapped_type& y : _mapped(x))
-                    _elements.push_back(y); }
-            _hasBeenCollected = true;}
+                for (const out_elem_type& y : _mapped(x))
+                    _elements.push_back(y); 
+				_hasBeenCollected = true; } }
         return _elements;}
 
 private:
@@ -355,7 +354,7 @@ template<
     template<typename...> class C, //container type
     typename E> //element type
 class TransparentView :
-    public ChainableView<C, TransparentView<C, E>, TransparenView<C, E>, E>
+    public ChainableView<C, TransparentView<C, E>, TransparentView<C, E>, E>
 {
 public:
     using orig_elem_type  = E;
@@ -370,7 +369,7 @@ public:
     TransparentView() = default;
 
     TransparentView(
-        const container<elem_type>& xs
+        const container<in_elem_type>& xs
     ) : _elements(xs)
     {}
 
@@ -386,18 +385,17 @@ public:
     {}
 
     bool hasBeenCollected() const {return true;}
-    const container<elem_type>& elements() const {return _elements;}
-    const container<elem_type>& collect() const {return _elements;}
+    const container<in_elem_type>& elements() const {return _elements;}
+    const container<in_elem_type>& collect() const {return _elements;}
 
 public: 
-    const container<elem_type>& _elements;
+    const container<in_elem_type>& _elements;
 };
 
-tempalte<
+template<
     template<typename...> class C, //container type
-    typename E> //element type
-TransparentView<C, E> view(
-    const C<E>& xs)
-{return
-    V(xs);}
+    typename E,
+    typename V = TransparentView<C, E> > //element type
+V view(const C<E>& xs) { return TransparentView<C, E>(xs);}
+
 } /*namespace fxpp*/

@@ -8,19 +8,20 @@
 #include <iostream>
 #include <array>
 #include "util.h"
-#include "fxpp/view.hpp"
+//include "fxpp/view.hpp"
 #include "fxpp/monadic.hpp"
+#include "catch.hpp"
 
 TEST_CASE (
-	"view a std::container",
-	"[viewOps] [fxpp] [views] [containers]")
+	"fxpp view a std::container",
+	"[fxpp] [viewOps] [fxpp] [views] [containers]")
 {
 	const uint32_t n = 100;
 	std::vector<int> xs(n);
 	std::iota(xs.begin(), xs.end(), 0);
 
 	const auto xview = fxpp::view(xs);
-	CHECK(xcoll.size() == n);
+	CHECK(xview.size() == n);
 
 	std::vector<int> xsquares(n);
 	const auto squared = [] (const int x) { return x * x; } ;
@@ -30,7 +31,9 @@ TEST_CASE (
 		begin(xsquares),
 		squared);
 	uint32_t index = 0;
-	for (const uint32_t y : fxpp::view(xs).map(squared).collect())
+	for (const uint32_t y : fxpp::view(xs
+		 ).map(squared
+		 ).collect())
 		CHECK(y == xsquares[index++]);
 
 	std::vector<int> xevens(n);
@@ -45,7 +48,9 @@ TEST_CASE (
 
 	index = 0;
 	const auto is_even = [] (const int x) { return x % 2 == 0; } ;
-	for (const uint32_t y : fxpp::view(xs).filter(is_even).collect())
+	for (const uint32_t y : fxpp::view(xs
+		 ).filter(is_even
+		 ).collect())
 		CHECK( y == xevens[index++]);
 
 	std::vector<int> xeven_squares = xsquares;
@@ -57,28 +62,36 @@ TEST_CASE (
 		xeven_squares.end());
 
 	index = 0;
-	for (const uint32_t y: fxpp::view(xs).map(square).filter(is_even).collect())
+	for (const uint32_t y: fxpp::view(xs
+		 ).map(squared
+		 ).filter(is_even
+		 ).collect())
 		CHECK(y == xeven_squares[index++]);
 
 	index = 0;
-	for (const uint32_t y: fxpp::view(xs).filter(is_even).map(square).collext())
+	for (const uint32_t y: fxpp::view(xs
+		 ).filter(is_even
+		 ).map(squared
+		 ).collect())
 		CHECK(y == xeven_squares[index++]);
 
 	index = 0;
-	for (const uint32_t y: fxpp::view(xevens).fmap(
-			 [] (const int x) -> std::vector<int> { return {x, x + 1}; }
+	for (const uint32_t y: fxpp::view(xevens
+		 ).fmap([] (const int x) -> std::vector<int> { return {x, x + 1}; }
 		 ).collect())
 		CHECK( y == xs[index++]);
 
 	index = 0;
-	for (const uint32_t y: fxpp::view(xs).filter(is_even).fmap(
-			 [] (const int x) -> std::vector<int> { return {x, x + 1}; }
+	for (const uint32_t y: fxpp::view(xs
+		 ).filter(is_even
+		 ).fmap([] (const int x) -> std::vector<int> { return {x, x + 1}; }
 		 ).collect())
 		CHECK(y == xs[index++]);
 
 	index = 0;
-	for (const uint32_t y: fxpp::view(xs).fitler(is_odd).fmap(
-			 [] (const int x) -> std::vector<int> {return {x - 1, x}; }
+	for (const uint32_t y: fxpp::view(xs
+		 ).filter(is_odd
+		 ).fmap([] (const int x) -> std::vector<int> {return {x - 1, x}; }
 		 ).collect())
 		CHECK( y == xs[index++]);
 

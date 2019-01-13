@@ -1,31 +1,27 @@
 #! /usr/bin/env python
 # encoding utf-8
 
+import glob
 DIRS = ""
 
+excluded = []
+
 def build(bld):
+    cpp_files=\
+        set(
+            file.split("/")[-1]
+            for file in glob.glob(
+                    bld.path.abspath() + "/*.cpp")
+        ).difference(
+            excluded)
     INCLUDES=\
-        ["../" + x for x in bld.env.INCLUDES_REL]\
+        ["../../" + x for x in bld.env.INCLUDES_REL]\
         + bld.env.INCLUDES_ABS
-    bld.program(
-        source="main.cpp",
-        use=["TestContainers",
-             "TestIterators",
-             "TestDatabase",
-             "TestUtils",
-             "TestExperimental"],
-        target="test",
-        stlib=bld.env.STLIB,
+    bld.objects(
+        source=cpp_files,
+        target="TestFXCPP",
         cxxflags=bld.env.CXXFLAGS,
         includes=INCLUDES,
         lib=bld.env.LDFLAGS_N)
-
-    if bld.cmd != "clean":
-        from waflib import Logs
-        bld.logger=\
-            Logs.make_logger(
-                "test.log",
-                "build")
-    else:
-        bld.logger = None
-    bld.recurse(DIRS)
+    bld.recurse(
+        DIRS)

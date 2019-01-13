@@ -410,5 +410,4 @@ ViewType collection(const ContainerType<elem_type>& xs)
 	return ViewType(xs);
 }
 
->>>>>>> 671ad7933edf862204870189d42b7fba95b49b20
 } //namespace view
