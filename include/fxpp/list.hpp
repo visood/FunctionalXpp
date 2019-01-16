@@ -14,15 +14,19 @@
 namespace fxpp {namespace collection {
 
 template<typename T>
-using List = std::list<T>
+using List = std::list<T>;
 
 template<typename T>
-inline const T& head(const List<T>& list) {return *begin(list); }
+inline const T& head(
+  const List<T>& list
+){return
+    *begin(list); }
 
 template<typename T>
 inline List<T> tail(
 	const List<T>& list
-){return List<T>(++begin(list), end(list)); }
+){return
+    List<T>(++begin(list), end(list)); }
 
 template<typename T>
 inline List<T> flatten(
@@ -52,13 +56,20 @@ List<T> nil = List<T>();
 /*
   To mimic a cons list, we use the stream operator
  */
-
-template<typename T>
+template<
+  typename T>
 inline fxpp::collection::List<T>& operator >> (
-    const T& head,
-    fxpp::collection::List<T>& tail
+  const T& head,
+  fxpp::collection::List<T>& tail
 ){tail.push_front(head);
-    return std::move(tail);}
+  return tail;}
+template<
+  typename T>
+inline const fxpp::collection::List<T>& operator >> (
+  const T& head,
+  fxpp::collection::List<T>& tail
+){tail.push_front(head);
+  return std::move(tail);}
 
 //bind
 template<
@@ -68,7 +79,10 @@ template<
 inline fxpp::collection::List<S>& operator >>= (
     fxpp::collection::List<T>& ts,
     const F& fst
-){ return fxpp::collection::flatten( fxpp::collection::map(fs, ts)); }
+){return
+    fxpp::collection::flatten(
+      fxpp::collection::map(
+        fst, ts)); }
 
 template<typename T>
 inline bool operator ==(

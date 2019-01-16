@@ -56,8 +56,9 @@ List<T> nil = List<T>();
 //ideally we would like >> to create a new (persistent, immutable) list
 //checkout implementation attempt in list.h
 template<typename T>
-inline std::wrapped::List<T>& operator >> (const T& head,
-										   std::wrapped::List<T>& tail)
+inline std::wrapped::List<T>& operator >> (
+  const T& head,
+  std::wrapped::List<T>& tail)
 {
 	tail.push_front(head);
 	return tail;

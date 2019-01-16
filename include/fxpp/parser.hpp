@@ -10,15 +10,35 @@
 #include <clocale>
 #include "fxpp/wrapped.hpp"
 #include "fxpp/monadic.hpp"
+#include "fxpp/list.hpp"
 
 //macros for nicer parser syntax
 #define return_(x) return yield(x)
 
 using namespace std::wrapped;
-namespace expression
-{
+using namespace fxpp::collection;
+
+#if 0
+template<
+  typename T>
+inline fxpp::collection::List<T>& operator >> (
+  const T& head,
+  fxpp::collection::List<T>& tail
+){tail.push_front(head);
+  return tail;}
+template<
+  typename T>
+inline const fxpp::collection::List<T>& operator >> (
+  const T& head,
+  fxpp::collection::List<T>& tail
+){tail.push_front(head);
+  return std::move(tail);}
+#endif
+
+namespace fxpp {
+namespace expression {
 template<typename T>
-struct ParsedResult {
+struct ParsedResult{
 	using type = T;
 	ParsedResult(
 		const T t,
@@ -34,9 +54,8 @@ struct ParsedResult {
 	{}
 
 	T value;
-	String out;
-	bool empty;
-};
+  String out;
+	bool empty; };
 //template specialization when there is no value!
 template<>
 struct ParsedResult<void>{
@@ -86,18 +105,32 @@ inline ParsedResult<T> parse(
     const Parser<T>& pt,
     const String& in
 ){return pt(in);}
-//that I may use with auto!
+/*
+  That we may use with auto!
+  However clang says: 'auto' not allowed in function prototype
+*/
+#if 0
 inline auto parse(
     const auto& pt,
     const String& in
 ){return pt(in);}
+#endif
+template<
+  typename ParserType, //Parser<T>
+  typename ResultType = typename std::result_of<ParserType&(String)>::type>
+inline ResultType parse(
+  const ParserType& p,
+  const String& in
+){return p(in);}
+
 
 //a parser that always fails
 template<typename T>
-const Parser<T> failure = Parser<T>(
-    [=] (const String& in){
-        in + "suppress unused variable warning";
-        return empty<T>;});
+const Parser<T> failure=
+  Parser<T>(
+    [] (const String& in){
+      in + "suppress unused variable warning";
+      return empty<T>;});
 
 /*
   Parser is a monad, and to provide full monadic functionality,
@@ -161,7 +194,7 @@ inline Parser<S> operator >>= (
 ){return
     Parser<S> (
         [=] (const String& in) {
-            const auto rt = parse(pt, in);
+            const auto rt = parse(p, in);
             if (rt.empty) return empty<S>;
             return parse(fs(), rt.out); });}
 
@@ -220,7 +253,7 @@ inline const Parser<S> operator >>= (
 template<
     typename P, //a type that quacks like Parser<void>
     typename Function,
-    typename PS = typename std::result_of<F&()>::type,
+    typename PS = typename std::result_of<Function&()>::type,
     typename RS = typename std::result_of<PS&(String)>::type,
     typename S  = typename RS::type>
 inline const Parser<S> operator >>= (
@@ -229,8 +262,8 @@ inline const Parser<S> operator >>= (
 ){return
     [=] (const String& in) {
         const auto r = p(in);
-        if (rt.empty) return empty<S>;
-        return fst()(rt.out);};}
+        if (r.empty) return empty<S>;
+        return fs()(r.out);};}
 /*
   What if do not use the return of the first parser?
   I will define this operation as >>
@@ -283,9 +316,9 @@ inline Parser<S> operator >> (
 ){return
     Parser<S>(
         [=] (const String& in) {
-            const auto rt = parse(pt, in);
-            if (rt.empty) return empty<S>;
-            return parse(ps, rt.out); });}
+            const auto r = parse(p, in);
+            if (r.empty) return empty<S>;
+            return parse(ps, r.out); });}
 
 /*
   We may want the parser to produce a tuple, 
@@ -301,7 +334,7 @@ inline Parser< std::tuple<T, S> > operator & (
     ){return
 		ps >>= [=] (const S& s
         ){return 
-            yield(std::make_tuple(t, s));};}}
+            yield(std::make_tuple(t, s));};};}
 /*
   specialize to the case when the second Parser drops its result
 */
@@ -332,7 +365,7 @@ inline auto operator &(
 template<
 	typename... This>
 inline auto operator &(
-	const Parser< std::tuple<This...>& pt,
+	const Parser< std::tuple<This...> >& pt,
 	const Parser<void>& p
 ){return
 	pt >>= [p] (const std::tuple<This...>& ts
@@ -365,7 +398,7 @@ struct RepeatImpl{
 						std::make_tuple(t),
 						ts));};};}};
 template<
-	typebame T>
+	typename T>
 struct RepeatImpl<T, 1>{
 	auto from(const Parser<T>& pt){return
 		pt >>= [=] (const auto& t){return
@@ -377,7 +410,7 @@ template<
 inline const auto repeat(
 	const Parser<T>& pt
 ){return
-	RepeatImpl<T, N>.from(pt);}
+    RepeatImpl<T, N>().from(pt);}
 /*
   If a parser fails, we may want to try another
  */
@@ -388,7 +421,7 @@ inline Parser<T> operator |(
 	const Parser<T>& pt2
 ){return
 	Parser<T>(
-		[=](const String&){
+		[=](const String& in){
 			const auto rt1 = parse(pt1, in);
 			if (rt1.empty) return parse(pt2, in);
 			return rt1;});}
@@ -402,7 +435,7 @@ inline Parser<T> maybe(
 ){return
 	pt | yield(T());}
 inline Parser<void> maybe(
-	const Parser<T>& pt
+	const Parser<void>& p
 ){return
 	p | yield();}
 
@@ -432,12 +465,11 @@ template<
 inline Parser< List<T> > many1(
 	const Parser<T>& pt
 ){return
-	pt >>= [=] (const T& t
-	){return
-		many(pt) >>= [=] (const List<T>& ts
-		){return
-			yield(
-				t >> ts);};}; }
+    pt >>= [=] (const T& t){
+      return
+        many(pt) >>= [=] (const List<T>& ts){
+          return
+            yield(t >> ts);};}; }
 #if 0
 //imperative many
 template<
@@ -502,12 +534,12 @@ inline Parser< List<T> > several(
             return l;});}
 template<
     typename T>
-inline Parser<uint> freq(const Parser<T>& pt
+inline Parser<int> freq(const Parser<T>& pt
 ){return
     accumulate(
         pt >> yield(1U),
         0U,
-        [=] (const uint s, const uint t) -> uint {return
+        [=] (const int s, const int t) -> int {return
             s + t;});}
 /*
   A parser that succeeds given the success of a predicate
@@ -552,13 +584,11 @@ template<
     typename T>
 inline Parser<T> token(
     const Parser<T>& pt
-){return
-    space >>= [=] (
-    ){return
-        pt >>= (const T& t
-        ){return
-            space >>= [=] (
-            ){return
+){return space >>= [=] (){
+    return pt >>= [=] (const T& t){
+        return
+          space >>= [=] (){
+              return
                 yield(t);};};};}
 
 /*
@@ -568,15 +598,16 @@ inline Parser<String> capture(
     const String& pattern
 ){return
     Parser<String>(
-        [=] (const String& in) {
-            std::smatch matches;
-            std::regex mexp(
-                String("(") + pattern + ")(.*)");
-            if (std::regex_match(in, matches, mexp))
-                return some(
-                    matches[1].str(),
-                    matches[2].str());
-            return empty<String>; });}
+      [=] (const String& in) {
+        std::smatch matches;
+        std::regex mexp(
+          String("(") + pattern + ")(.*)");
+        if (std::regex_match(in, matches, mexp))
+        return some(
+          matches[1].str(),
+          matches[2].str());
+        return empty<String>; });}
+}
 }
 
 #undef return_
