@@ -489,7 +489,6 @@ inline Parser< List<T> > several(const Parser<T>& pt)
 	);
 }
 #endif
-
 //we can generalize several to use a lambda to accumulate results
 template<
 	typename T, //type of the parser
