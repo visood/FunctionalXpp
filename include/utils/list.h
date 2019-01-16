@@ -1,5 +1,6 @@
 //a monadic list
 //an example to design an immutable, persistent data structure
+//there is include/containers/list.h that works as well 
 
 #pragma once
 #include "util.h"

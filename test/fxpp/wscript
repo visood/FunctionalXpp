@@ -4,7 +4,9 @@
 import glob
 DIRS = ""
 
-excluded = []
+excluded=\
+    []
+   # ["list.cpp", "parser.cpp"]
 
 def build(bld):
     cpp_files=\

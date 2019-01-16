@@ -8,14 +8,14 @@
 #include <algorithm>
 #include <stdexcept>
 #include <clocale>
-#include "fxpp/wrapped.hpp"
+#include "fxpp/fxpp.hpp"
 #include "fxpp/monadic.hpp"
 #include "fxpp/list.hpp"
 
 //macros for nicer parser syntax
 #define return_(x) return yield(x)
 
-using namespace std::wrapped;
+using namespace fxpp;
 using namespace fxpp::collection;
 
 #if 0
@@ -459,7 +459,9 @@ template<
 inline Parser< List<T> > many(
 	const Parser<T>& pt
 ){return
-	many1(pt) | yield(List<T>());}
+    many1(pt) | yield(List<T>());}
+
+using ::operator >>;
 template<
 	typename T>
 inline Parser< List<T> > many1(
@@ -547,19 +549,19 @@ inline Parser<int> freq(const Parser<T>& pt
 inline Parser<char> sat(
     const auto& pred
 ){return
-    item >>= [=] (const char c
-    ){return
+    item >>= [=] (const char c){
+      return
         pred(c) ? yield(c) : failure<char>;};}
 
-const auto isSpace = [=] (const char c) { return c == ' ';};
-
+const auto isSpace=
+  [=] (const char c){
+    return c == ' ';};
 inline const auto char_(
     const char c
 ){return
-    sat(
-        [=] (const char x
-        ){return
-            c == ' ';});}
+    sat([=] (const char x){
+      return
+        x == c;});}
 inline Parser<void> drop(
     const char c
 ){return

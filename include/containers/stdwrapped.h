@@ -11,7 +11,7 @@ namespace std { namespace wrapped {
 template <typename T>
 using List = std::list<T>;
 //we do not want to create a wrapper class, instead we use operators
-template< typename T>
+template<typename T>
 List<T> unit(const T& t) { return List<T>(t);}
 
 template<typename T>
@@ -49,7 +49,8 @@ inline List<S> map(const F f, const List<T>& ts)
 }
 template<typename T>
 List<T> nil = List<T>();
-} /*namespace wrapped*/}/*namespace std*/
+} /*namespace wrapped*/
+}/*namespace std*/
 
 //the list should be cons list, we will use the stream operator
 //this is not the ideal solution

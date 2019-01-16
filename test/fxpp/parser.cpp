@@ -5,13 +5,13 @@
 */
 
 #include "catch.hpp"
-#include "fxpp/wrapped.hpp"
 #include "fxpp/parser.hpp"
 
+using namespace fxpp;
 using namespace fxpp::expression;
-using namespace std::wrapped;
+
 TEST_CASE(
-	"Functional fxpp parser basics",
+	"Functional parser basics",
 	"[ParserBasicSyntax] [FunctionalParserBasics]"
 ){
   const String hello_world(
@@ -27,7 +27,7 @@ TEST_CASE(
   REQUIRE(
     not hello_world_y.empty);
   CHECK(
-    hello_world_y.value == "value");
+    hello_world_y.value == "hello");
 	CHECK(
 		hello_world_y.out == "world");
 	const auto hi_item=

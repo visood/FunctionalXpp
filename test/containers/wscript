@@ -4,7 +4,8 @@
 import glob
 DIRS = "iterators experimental"
 
-exclude = []
+exclude=\
+    ["list.cpp"]
 
 def build(bld):
     cpp_files=\

@@ -3,7 +3,8 @@
 
 import glob
 
-exclude = []
+exclude=\
+    ["list.cpp", "parser.cpp"]
 
 def build(bld):
     cppFiles = set(
