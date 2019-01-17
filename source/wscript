@@ -4,12 +4,22 @@
 #from waflib.Configure import conf
 import glob, os
 
-DIRS = "utils containers database"
-
+DIRS=\
+    "utils containers database"
+excluded=\
+    ["category.cpp"]
 def build(bld):
         bld.recurse(DIRS)
-        INCLUDES = ["../" + x for x in bld.env.INCLUDES_REL] + bld.env.INCLUDES_ABS
-
+        cpp_files=\
+                set(
+                    file.split("/")[-1]
+                    for file in glob.glob(
+                            bld.path.abspath() + "/*.cpp")
+                ).difference(
+                        excluded)
+        INCLUDES=\
+            ["../" + x for x in bld.env.INCLUDES_REL]\
+            + bld.env.INCLUDES_ABS
         bld.program(
                 source = "category.cpp",
                 use = ["containers", "database", "utils"],
@@ -17,7 +27,4 @@ def build(bld):
                 stlib = bld.env.STLIB, #static lib - needed if not default
                 cxxflags = bld.env.CXXFLAGS,
                 includes = INCLUDES,
-                lib = bld.env.LDFLAGS_N
-        )
-
-        bld.recurse(DIRS)
+                lib = bld.env.LDFLAGS_N)

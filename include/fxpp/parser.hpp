@@ -269,9 +269,10 @@ inline const Parser<S> operator >>= (
   I will define this operation as >>
  */
 template<
-    typename S>
+  typename ParserT,
+  typename S>
 inline Parser<S> operator >> (
-    const auto& pt,
+    const ParserT& pt,
     const Parser<S>& ps
 ){return
     Parser<S>(
@@ -296,23 +297,24 @@ inline Parser<S> operator >> (
  */
 #if 0
 template<
-    typename Function,
-    typename PS = typename std::result_of<Function&()>::type,
-    typename RS = typename std::result_of<PS&(String)>::type,
-    typename S = typename RS::type>
+  typename Function,
+  typename PS = typename std::result_of<Function&()>::type,
+  typename RS = typename std::result_of<PS&(String)>::type,
+  typename S = typename RS::type>
 inline Parser<S> operator >>= (
-    const auto& p,
-    const Function& f
+  const auto& p,
+  const Function& f
 ){return p >> f();}
 #endif
 
 template<
-    typename PS,
-    typename RS = typename std::result_of<PS&(String)>::type,
-    typename S  = typename RS::type>
+  typename ParserT,
+  typename PS,
+  typename RS = typename std::result_of<PS&(String)>::type,
+  typename S  = typename RS::type>
 inline Parser<S> operator >> (
-    const auto& p,
-    const auto& ps
+    const ParserT& p,
+    const Parser<S>& ps
 ){return
     Parser<S>(
         [=] (const String& in) {
@@ -407,7 +409,7 @@ struct RepeatImpl<T, 1>{
 template<
 	size_t N,
 	typename T>
-inline const auto repeat(
+inline auto repeat(
 	const Parser<T>& pt
 ){return
     RepeatImpl<T, N>().from(pt);}
@@ -546,15 +548,17 @@ inline Parser<int> freq(const Parser<T>& pt
 /*
   A parser that succeeds given the success of a predicate
  */
+template<
+  typename Predicate>
 inline Parser<char> sat(
-    const auto& pred
+    const Predicate& pred
 ){return
     item >>= [=] (const char c){
       return
         pred(c) ? yield(c) : failure<char>;};}
 
 const auto isSpace=
-  [=] (const char c){
+  [] (const char c){
     return c == ' ';};
 inline const auto char_(
     const char c

@@ -134,50 +134,64 @@ def configure_gcc_5(conf):
     #print(conf.all_envs['debug'])
     #print "-----------------------------------------------------------------------------------------"
 
-
 def configure_clang(conf):
-    conf.find_program('clang', var='CXX', mandatory = True)
-    #conf.CXX = 'clang'
-    conf.load("clang++")
-    #conf.find_program('clang', var='CC', mandatory = True)
-    #conf.load("clang")
+    """..."""
+    conf.find_program(
+        "clang",
+        var="C",
+        mandatory=True)
+    conf.load(
+        "clang")
+    conf.find_program(
+        "clang++",
+        var="CXX",
+        mandatory=True)
+    conf.load(
+        "clang++")
     global_env(conf)
-    conf.env.append_unique('LDFLAGS_N',
-                          [ "pthread",
-                            "util", "m"]
-    )
-    conf.setenv('alternative-clang', env=conf.env.derive())
-    conf.env.CXXFLAGS = ['-Wall',
-                         '-Wno-unknown-pragmas',
-                         '-Wextra',
-                         '-Wconversion',
-                         '-fno-strict-aliasing',
-                         '-D_FORTIFY_SOURCE=2',
-                         '-fstack-protector',
-                         '--param=ssp-buffer-size=4',
-                         '-Wformat',
-                         '-Werror=format-security',
-                         '-fwrapv',
-                         '-O3',
-                         '-std=c++1z'
-    ]
-    conf.env.append_unique('LIBS',
-                           ['c++', 'c++abi'])
-    conf.define('RELEASE', 1)
-
-    #print ("environment release\n")
-    #print(conf.all_envs['release'])
-    #print "-----------------------------------------------------------------------------------------"
-
-    conf.setenv('alternative-clang-debug', env=conf.env.derive())
-    conf.env.CXXFLAGS = ['-g',
-                         '-glldb',
-                         '-Wdocumentation']
-    conf.define('DEBUG', 1)
-    #print ("environment debug\n")
-    #print(conf.all_envs['debug'])
-    #print "-----------------------------------------------------------------------------------------"
-
+    conf.env.append_unique(
+        "LDFLAGS_N",
+        ["pthread",
+         "util",
+         "m"])
+    conf.setenv(
+        "clang-release",
+        env=conf.env.derive())
+    conf.env.append_unique(
+        "CXXFLAGS",
+        ['-Wall',
+         '-Wno-unknown-pragmas',
+         '-Wextra',
+         '-Wconversion',
+         '-fno-strict-aliasing',
+         '-D_FORTIFY_SOURCE=2',
+         '-fstack-protector',
+         '--param=ssp-buffer-size=4',
+         '-Wformat',
+         '-Werror=format-security',
+         '-fwrapv',
+         '-O3',
+         "-std=c++17",
+         "-Wl",
+         "-stdlib=libc++"])
+    conf.env.LINKFLAGS=[
+        "-std=c++17",
+        "-stdlib=libc++"]
+    conf.env.append_unique(
+        "LIBS",
+        ["c++", "c++abi"])
+    conf.define(
+        "RELEASE", 1)
+    conf.setenv(
+        "clang-debug",
+        env=conf.env.derive())
+    conf.env.append_unique(
+        "CXXFLAGS",
+        ["-g",
+        "-glidb",
+        "-Wdocumentation"])
+    conf.define(
+        "DEBUG", 1)
 
 def options(opt):
     opt.load("compiler_cxx")
@@ -256,7 +270,7 @@ class alt_release(BuildContext):
 
 class alt_debug(BuildContext):
     cmd = 'build_clang_debug'
-    variant = 'alternative-gcc-5-debug'
+    variant = 'alternative-clang-debug'
 
 def build(bld):
     if not bld.variant:

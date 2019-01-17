@@ -4,7 +4,7 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
-int main(int argc, const char** const argv) {
+int main(int argc, char** const argv) {
   Catch::Session session;
   int returnCode = session.applyCommandLine( argc, argv);
   if (returnCode != 0) // a command line error
