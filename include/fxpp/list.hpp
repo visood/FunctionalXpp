@@ -1,114 +1,180 @@
 /*
-  Functional List.
-  I have started with a simple wrapper around std::list,
-  that I hope to replace with an implementation of a truly
-  functional (and persistent) list.
-  It should be doable in C++, however I have not found any implementation.
+  Functional, persistent List.
 
   Vishal Sood
-  20190113
+  20190118
  */
 #pragma once
+#include <iostream>
+#include <memory>
+#include <stdexcept>
 
-#include <list>
-namespace fxpp {namespace collection {
+namespace fxpp {namespace List {
 
-//a const list can be a good example to design an immutable,
-//persistent data structure in C++.
-// a wrapper around std::list that employs monadic relationships
-template <typename T>
-using List = std::list<T>;
-//we do not want to create a wrapper class, instead we use operators
-template<typename T>
-List<T> unit(const T& t) { return List<T>(t);}
+template<typename ElemType> class List;
 
-template<typename T>
-inline const T& head(const List<T>& list) { return *begin(list);}
-
-template<typename T>
-inline List<T> tail(const List<T>& list) {
-	return List<T>(++begin(list), end(list));
-}
-
-
-
-//for a list monad we need to flatten a list of lists
-template<typename T>
-inline List<T> flatten(List< List<T> >& llt)
-{
-	List<T> ltout;
-	auto it = ltout.begin();
-	for (const auto& lt : llt) {
-		ltout.insert(it, lt);
-	}
-	return ltout;
-}
-//an explicit map
 template<
-	typename T,
-	typename F,
-	typename S = typename std::result_of<F&(T)>::type
->
-inline List<S> map(const F f, const List<T>& ts)
-{
-	List<S> ss;
-	for (const auto& t : ts) ss.push_back(f(t));
-	return ts;
-}
-template<typename T>
-List<T> nil = List<T>();
-}/*namespace collection */
-}/*namespace fxpp */
+  typename ElemType>
+class ConsCell {
+public:
+  using this_type = ConsCell<ElemType>;
 
+  ConsCell() = default;
+  ConsCell(
+    const ElemType& x,
+    const std::shared_ptr<this_type>& nextPtr
+  ):
+    _elemPtr(std::make_unique<ElemType>(x)),
+    _nextPtr(nextPtr)
+  {
+    /* *_elemPtr = x; */
+  }
+  ConsCell(
+    cons ElemType& x,
+    std::shared_ptr<this_type> nextPtr
+  ):
+    _elemPtr(std::make_unique<this_type>(x)),
+    _nexPtr(nextPtr)
+  {}
+  ConsCell(
+    const this_type& that
+  ):
+    ConsCell(
+      that.elem()
+      std::make_shared<ElemType>(that.next()))
+  {}
+  /*
+  ConsCell(
+    this_type&& that
+  ) noexcept :
+    ConsCell(
+      _elemPtr(std::move(&that.elem())),
+      _nextPtr(std::move(&that.next())))
+  {}
+  */
 
-//the list should be cons list, we will use the stream operator
-//this is not the ideal solution
-//ideally we would like >> to create a new (persistent, immutable) list
-//checkout implementation attempt in list.h
-template<typename T>
-inline fxpp::collection::List<T>& operator >> (
-  const T& head,
-  fxpp::collection::List<T>& tail)
-{
-	tail.push_front(head);
-	return tail;
-}
+  ~ConsCell()
+  {}
 
-template<typename T>
-inline const fxpp::collection::List<T>&
-operator >> (
-  const T& head,
-  fxpp::collection::List<T> tail)
-{
-	tail.push_front(head);
-	return std::move(tail);
-}
-//bind
+  this_type operator= (
+    const this_type& that) const
+  { return
+      ConsCell<ElemType>(that);}
+        
+  const ElemType&  elem() const {return *_elemPtr;}
+  const this_type& next() const {return *_nextPtr;}
+  bool empty() const {return _elemPtr? false: true;}
+
+  friend class List<ElemType>;
+private:
+  std::unique_ptr<ElemType> _elemPtr;
+  std::shared_ptr<this_type> _nextPtr;
+};
+
 template<
-	typename T,
-	typename F,
-	typename S = typename std::result_of<F&(T)>::value_type
->
-inline fxpp::collection::List<S>&
-operator >>= (
-  fxpp::collection::List<T>& ts,
-  const F& fst)
-{
-	return flatten( map(fst, ts));
-}
-template<typename T>
-inline bool operator==(
-  const fxpp::collection::List<T>& l1,
-  const fxpp::collection::List<T>& l2)
-{
-	if (l1.empty()) return l2.empty();
-	if (l2.empty()) return false;
-	return
-    fxpp::collection::head(l1) == fxpp::collection::head(l2) and
-    fxpp::collection::tail(l1) == fxpp::collection::tail(l2);
-}
+  typename ElemType>
+const ConsCell<ElemType> Nil; /*can we make this constexpr?*/
 
 
+template<typename ElemType>
+class List{
+public:
+  using ConsCellType = ConsCell<ElemType>;
 
+  List(
+  ) : _headCellPtr(std::make_shared<ConsCellType>(ConsCellType()))
+  {
+    //.*_headCellPtr = ConsCellType();
+  }
+  List(
+    const std::shared_ptr<ConsCellType>& headCellPtr
+  ): _headCellPtr(headCellPtr)
+  {}
 
+  bool empty() const
+  { return
+      _headCellPtr->empty();}
+  bool nil() const
+  { return
+      _headCellPtr->empty();}
+  int size() const
+  { return
+      empty() ? 0 : 1 + tail().size();}
+  const ElemType& head() const
+  { return
+      *(_headCellPtr->_elemPtr);}
 
+  List<ElemType> tail() const 
+  { if (empty()) 
+      throw std::out_of_range(
+        "tail called on an empty list!!!");
+    return
+      List<ElemType>(_headCellPtr->_nextPtr);}
+  List<ElemType> cons(
+    const ElemType& x) const 
+  { return
+      List<ElemType>(
+        std::make_shared<ConsCellType>(
+          ConsCellType(
+            x, _headCellPtr)) );}
+  void printCellUsage() const
+  { if (empty())
+      std::cout << "done" << std::endl;
+    else {
+      std::cout << "head with element "
+                << *(_headCellPtr->_elemPtr) << ", "
+                << "cell usage: " << _headCellPtr.use_count() << ", "
+                << "( head-cell's next has usage "
+                << _headCellPtr->_nextPtr.use_count()
+                << ");";
+      tail().printCellUsage();}}
+private:
+  std::shared_ptr<ConsCellType> _headCellPtr;
+};
+
+template<
+  typename ElemType>
+const ElemType& head(
+  const List<ElemType>& l)
+{ return
+    l.head();}
+template<
+  typename ElemType>
+const List<ElemType> tail(
+  const List<ElemType>& l)
+{ return
+    l.tail();}
+template<
+  typename ElemType>
+List<ElemType> cons(
+  const ElemType& x,
+  const List<ElemType>& ys)
+{ return
+    ys.cons(x);}
+template<
+  typename ElemType>
+List<ElemType> make_list(const ElemType& x)
+{ return
+    cons(
+      x,
+      List<ElemType>());}
+template<
+  typename HeadType,
+  typename... TailTypes>
+List<HeadType> make_list(
+  const HeadType& head_element,
+  TailTypes... tail_elements)
+{ return
+    cons(
+      head_element,
+      make_list(tail_elements...));}
+}/*namespace List*/ } /*namespace fxpp*/
+
+template<
+  typename ElemType,
+  typename ListType = fxpp::List::List<ElemType> >
+inline const ListType operator >> (
+  const ElemType& head,
+  const ListType& tail)
+{ return
+    tail.cons(head);}

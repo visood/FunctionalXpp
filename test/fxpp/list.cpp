@@ -1,27 +1,37 @@
 #include <iostream>
-#include "list.h"
+#include "fxpp/list.hpp"
 #include "maybe.h"
 #include "catch.hpp"
 
-using namespace Persistent::List;
+using namespace fxpp::List;
 
 TEST_CASE(
 	"cons cell",
 	"[ConsCell] [Containers]"
 ){
-	const auto emptyCell = std::make_shared<ConsCell<int>>();
-	*emptyCell = ConsCell<int>();
+	const auto emptyCell=
+    std::make_shared<ConsCell<int>>(
+      ConsCell<int>());
+	//*emptyCell = ;
 
 	CHECK(emptyCell->empty());
 
-	const auto c1Ptr = std::make_shared<ConsCell<int>>();
-	*c1Ptr = ConsCell<int>(1, emptyCell);
+	const auto c1Ptr=
+    std::make_shared<ConsCell<int>>(
+      ConsCell<int>(
+        1,
+        emptyCell));
+	//*c1Ptr = ;
 	CHECK(c1Ptr->elem() == 1);
 	CHECK(c1Ptr->next().empty());
 
 	std::cout << "c1 checked" << std::endl;
-	const auto c2Ptr = std::make_shared<ConsCell<int>>();
-	*c2Ptr = ConsCell<int>(2, c1Ptr);
+	const auto c2Ptr=
+    std::make_shared<ConsCell<int>>(
+      ConsCell<int>(
+        2,
+        c1Ptr));
+	//*c2Ptr = ;
 	std::cout << "c2 created" << std::endl;
 	CHECK(c2Ptr->elem() == 2);
 	CHECK(c2Ptr->next().elem() == 1);

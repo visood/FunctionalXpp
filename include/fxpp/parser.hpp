@@ -10,13 +10,13 @@
 #include <clocale>
 #include "fxpp/fxpp.hpp"
 #include "fxpp/monadic.hpp"
-#include "fxpp/list.hpp"
+#include "fxpp/wrapped_list.hpp"
 
 //macros for nicer parser syntax
 #define return_(x) return yield(x)
 
 using namespace fxpp;
-using namespace fxpp::collection;
+using namespace fxpp::wrapped;
 
 namespace fxpp {
 namespace expression {
