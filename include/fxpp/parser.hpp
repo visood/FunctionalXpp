@@ -18,23 +18,6 @@
 using namespace fxpp;
 using namespace fxpp::collection;
 
-#if 0
-template<
-  typename T>
-inline fxpp::collection::List<T>& operator >> (
-  const T& head,
-  fxpp::collection::List<T>& tail
-){tail.push_front(head);
-  return tail;}
-template<
-  typename T>
-inline const fxpp::collection::List<T>& operator >> (
-  const T& head,
-  fxpp::collection::List<T>& tail
-){tail.push_front(head);
-  return std::move(tail);}
-#endif
-
 namespace fxpp {
 namespace expression {
 template<typename T>

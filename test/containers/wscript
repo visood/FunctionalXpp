@@ -6,8 +6,10 @@ DIRS=\
     "iterators"
     #"iterators experimental"
 
-exclude=\
-    ["list.cpp"]
+exclude=[
+    "list.cpp",
+     "view.cpp",
+    "maybe.cpp"]
 
 def build(bld):
     cpp_files=\
