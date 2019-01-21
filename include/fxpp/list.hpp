@@ -27,42 +27,53 @@ public:
     _elemPtr(std::make_unique<ElemType>(x)),
     _nextPtr(nextPtr)
   {
-    /* *_elemPtr = x; */
+    //*_elemPtr= x;
   }
   ConsCell(
-    cons ElemType& x,
-    std::shared_ptr<this_type> nextPtr
+    const ElemType& x
   ):
-    _elemPtr(std::make_unique<this_type>(x)),
-    _nexPtr(nextPtr)
+    ConsCell(x, nullptr)
+  {}
+  ConsCell(
+    const ElemType& x,
+    const this_type& that
+  ) : ConsCell(x,
+               std::make_shared<this_type>(that))
   {}
   ConsCell(
     const this_type& that
   ):
-    ConsCell(
-      that.elem()
-      std::make_shared<ElemType>(that.next()))
+    _elemPtr(that.empty() ? nullptr : std::make_unique<ElemType>(that.elem())),
+    _nextPtr(that.nextPtr())
   {}
-  /*
   ConsCell(
     this_type&& that
   ) noexcept :
-    ConsCell(
-      _elemPtr(std::move(&that.elem())),
-      _nextPtr(std::move(&that.next())))
+    _elemPtr(that.empty() ? nullptr : std::make_unique<ElemType>(that.elem())),
+    _nextPtr(std::move(that.nextPtr()))
   {}
-  */
 
   ~ConsCell()
   {}
 
   this_type operator= (
+    const this_type& that) 
+  { std::cout << "assign with mutable = " << std::endl;
+    _elemPtr = std::make_unique<ElemType>(that.elem());
+    _nextPtr = that.nextPtr();
+    return *this;}
+        
+  this_type operator= (
     const this_type& that) const
-  { return
+  { std::cout << "assign with const = " << std::endl;
+    return 
       ConsCell<ElemType>(that);}
         
+  const std::unique_ptr<ElemType>& elemPtr() const {return _elemPtr;}
   const ElemType&  elem() const {return *_elemPtr;}
+  const ElemType& get() const {return *_elemPtr;}
   const this_type& next() const {return *_nextPtr;}
+  const std::shared_ptr<this_type>& nextPtr() const {return _nextPtr;}
   bool empty() const {return _elemPtr? false: true;}
 
   friend class List<ElemType>;

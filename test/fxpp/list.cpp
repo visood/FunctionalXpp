@@ -9,33 +9,86 @@ TEST_CASE(
 	"cons cell",
 	"[ConsCell] [Containers]"
 ){
-	const auto emptyCell=
-    std::make_shared<ConsCell<int>>(
-      ConsCell<int>());
-	//*emptyCell = ;
+  using C= ConsCell<int>;
+  const auto emptyCell= C() ;
+    
+	const auto emptyCellPtr=
+    std::make_shared<C>(emptyCell);
+      //ConsCell<int>());
+	//*emptyCellPtr= ConsCell<int>();
+	REQUIRE(
+    emptyCellPtr->empty());
 
-	CHECK(emptyCell->empty());
+  const auto one_cell= C(2);
+  CHECK(
+    not one_cell.empty());
+  CHECK(
+    one_cell.get() == 2);
+  INFO(
+    "one cell CHECKED");
 
-	const auto c1Ptr=
-    std::make_shared<ConsCell<int>>(
-      ConsCell<int>(
-        1,
-        emptyCell));
-	//*c1Ptr = ;
-	CHECK(c1Ptr->elem() == 1);
-	CHECK(c1Ptr->next().empty());
-
-	std::cout << "c1 checked" << std::endl;
+  const auto c1Cell= C(1, emptyCell);
+  REQUIRE(
+    not c1Cell.empty());
+  CHECK(
+    c1Cell.get() == 1);
+  INFO(
+    "c1 cell checked");
+	const auto c1Ptr= 
+    std::make_shared<C>(C(1, emptyCellPtr));
+    //std::make_shared<C>(c1Cell);
+	//*c1Ptr = ConsCell<int>(1, emptyCellPtr);
+  REQUIRE(
+    not c1Ptr->empty());
+	CHECK(
+    c1Ptr->elem() == 1);
+	CHECK(
+    c1Ptr->next().empty());
+  INFO(
+    "c1 ptr checked");
+  const auto c2Cell= C(2, c1Ptr);
+  REQUIRE(
+    not c2Cell.empty());
+  INFO(
+    "c2 cell is not empty");
+  CHECK(
+    c2Cell.get() == 2);
+  INFO(
+    "c2 contains a value of 2");
+  REQUIRE(
+    not c2Cell.next().empty());
+  CHECK(
+    c2Cell.next().get() == 1);
+  INFO(
+    "c2 cell checked");
 	const auto c2Ptr=
-    std::make_shared<ConsCell<int>>(
-      ConsCell<int>(
-        2,
-        c1Ptr));
-	//*c2Ptr = ;
-	std::cout << "c2 created" << std::endl;
-	CHECK(c2Ptr->elem() == 2);
-	CHECK(c2Ptr->next().elem() == 1);
-	CHECK(c2Ptr->next().next().empty());
+    std::make_shared<C>(
+      C(2, c1Ptr));
+  INFO(
+    "c2 ptr created");
+	*c2Ptr = ConsCell<int>(2, c1Cell);
+  INFO(
+    "c2 ptr loaded");
+  REQUIRE(
+    not (c2Ptr->empty()));
+  INFO(
+    "c2Ptr is not null");
+	CHECK(
+    c2Ptr->elem() == 2);
+  INFO(
+    "c2Ptr element is 2");
+  REQUIRE(
+    c2Ptr->nextPtr());
+  REQUIRE(
+    not c2Ptr->next().empty());
+	CHECK(
+    c2Ptr->next().elem() == 1);
+  INFO(
+    "c2Ptr net elem is 1");
+	CHECK(
+    c2Ptr->next().next().empty());
+  INFO(
+    "c2Ptr next next is empty");
 }
 
 TEST_CASE (
