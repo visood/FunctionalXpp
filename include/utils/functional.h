@@ -78,7 +78,7 @@ template<
 Element max(const Comparator& comp,
 			const Container<Element>& xs,
 			const Element& defmax)
-{
+{return
 	xs.size() == 0 ? defmax : *std::max_element(begin(xs), end(xs), comp);
 }
 	
@@ -104,7 +104,7 @@ template<
 Element maxOrElse(const Comparator& comp,
 				  const Container<Element>& xs,
 				  const Element& defmax)
-{
+{return
 	xs.size() == 0 ? defmax : *std::max_element(begin(xs), end(xs), comp);
 }
 
