@@ -2,9 +2,12 @@
   functional utilities
 */
 
+#include <iostream>
 #include <string>
 #include <type_traits>
 #include <memory>
+#include <functional>
+#include <numeric>
 #include <algorithm>
 #include <set>
 #include <vector>
@@ -17,10 +20,13 @@ template<
   template<typename...> class Container,
   typename Element>
 void puts(
-  const Container<Element>& xs) 
+  const Container<Element>& elements) 
 { std::for_each(
-    begin(xs), end(xs),
-    [] (const Element& x) {
+    begin(
+      elements),
+    end(
+      elements),
+    [](const Element& x){
       std::cout << x << ", ";});
   std::cout << std::endl;}
 
@@ -33,7 +39,7 @@ Container<R> zip(
   const Container<T1>& xs,
   const Container<T2>& ys
 ){const auto l = xs.size() <= ys.size() ? xs.size() : ys.size();
-  Container<R> xyz(l);
+  Container<R> xys(l);
   std::transform(
     begin(xs), begin(xs) + l,
     begin(ys),
@@ -46,20 +52,29 @@ template<
   typename Element,
   typename Predicate>
 bool any(
-  const Predicate& p,
-  const Container<Element>& xs
+  const Predicate& predicate,
+  const Container<Element>& elements
 ){return
-    std::any_of(begin(xs), end(xs), p);}
+    std::any_of(
+      begin(
+        elements), end(
+          elements),
+      predicate);}
 
 template<
   template<typename...> class Container,
   typename Element,
   typename Predicate>
 bool all(
-  const Predicate& p,
-  const Container<Element>& xs
+  const Predicate& predicate,
+  const Container<Element>& elements
 ){return
-    std::all_of(begin(xs), end(xs), p);}
+    std::all_of(
+      begin(
+        elements),
+      end(
+        elements),
+      predicate);}
 
 template<
   template<typename...> class Container,
@@ -79,23 +94,34 @@ template<
   typename Comparator>
 Element max(
   const Comparator& compare,
-  const Container<Element>& xs)
-{ if (xs.size() == 0)
-    throw std::out_of_range(
-      "max of an empty container");
+  const Container<Element>& elements)
+{ if (elements.size() == 0)
+    throw
+      std::out_of_range(
+        "max of an empty container");
   return
-    *std::max_element(begin(xs), end(xs), compare);}
+    *std::max_element(
+      begin(
+        elements),
+      end(
+        elements),
+      compare);}
 
 template<
   template<typename...> class Container,
   typename Element>
 Element max(
-  const Container<Element>& xs)
-{ if (xs.size() == 0)
-    throw std::out_of_range(
-      "max of an empty container");
+  const Container<Element>& elements)
+{ if (elements.size() == 0)
+    throw
+      std::out_of_range(
+        "max of an empty container");
   return
-    *std::max_element(begin(xs), end(xs));}
+    *std::max_element(
+      begin(
+        elements),
+      end(
+          elements));}
 
 template<
   template<typename...> class Container,
@@ -103,47 +129,67 @@ template<
   typename Comparator>
 Element maxOrElse(
   const Comparator& compare,
-  const Container<Element>& xs,
+  const Container<Element>& elements,
   const Element& default_value
 ){return
-    xs.size() == 0 ?
+    elements.size() == 0 ?
     default_value
-    : *std::max_element(begin(xs), end(xs), compare);}
+    : *std::max_element(
+      begin(
+        elements),
+      end(
+        elements),
+      compare);}
 
 template<
   template<typename...> class Container,
   typename Element>
 Element maxOrElse(
-  const Container<Element>& xs,
+  const Container<Element>& elements,
   const Element& default_value
 ){return
-    xs.size() == 0 ?
+    elements.size() == 0 ?
     default_value
-    : *std::max_element(begin(xs), end(xs));}
+    : *std::max_element(
+      begin(
+        elements),
+      end(
+        elements));}
 
  template<
   template<typename...> class Container,
   typename Element,
   typename Comparator>
-Element max(
+Element min(
   const Comparator& compare,
-  const Container<Element>& xs)
-{ if (xs.size() == 0)
-    throw std::out_of_range(
-      "max of an empty container");
+  const Container<Element>& elements)
+{ if (elements.size() == 0)
+    throw
+      std::out_of_range(
+        "min of an empty container");
   return
-    *std::max_element(begin(xs), end(xs), compare);}
+    *std::min_element(
+      begin(
+        elements),
+      end(
+        elements),
+      compare);}
 
 template<
   template<typename...> class Container,
   typename Element>
 Element min(
-  const Container<Element>& xs)
-{ if (xs.size() == 0)
-    throw std::out_of_range(
-      "min of an empty container");
+  const Container<Element>& elements)
+{ if (elements.size() == 0)
+    throw
+      std::out_of_range(
+        "min of an empty container");
   return
-    *std::min_element(begin(xs), end(xs));}
+    *std::min_element(
+      begin(
+        elements),
+      end(
+        elements));}
 
 template<
   template<typename...> class Container,
@@ -151,83 +197,101 @@ template<
   typename Comparator>
 Element minOrElse(
   const Comparator& compare,
-  const Container<Element>& xs,
+  const Container<Element>& elements,
   const Element& default_value
 ){return
-    xs.size() == 0 ?
-    default_value
-    : *std::min_element(begin(xs), end(xs), compare);}
+    elements.size() == 0 ?
+    default_value :
+    *std::min_element(
+      begin(
+        elements),
+      end(
+        elements),
+      compare);}
 
 template<
   template<typename...> class Container,
   typename Element>
 Element minOrElse(
-  const Container<Element>& xs,
+  const Container<Element>& elements,
   const Element& default_value
 ){return
-    xs.size() == 0 ?
-    default_value
-    : *std::min_element(begin(xs), end(xs));}
+    elements.size() == 0 ?
+    default_value :
+    *std::min_element(
+      begin(
+        elements),
+      end(
+        elements));}
 
 template<
   typename Element,
   typename... Args>
 Element max(
-  const std::set<Element, Args...>& xs)
-{ if (xs.empty())
-    throw std::out_of_range(
-      "max of an empty set");
-  return *xs.rbegin():}
+  const std::set<Element, Args...>& elements)
+{ if (elements.empty())
+    throw
+      std::out_of_range(
+        "max of an empty set");
+  return
+    *elements.rbegin();}
 
 template<
   typename Element,
   typename... Args>
 Element min(
-  const std::set<Element, Args...>& xs)
-{ if (xs.empty())
+  const std::set<Element, Args...>& elements)
+{ if (elements.empty())
     throw std::out_of_range(
       "max of an empty set");
-  return *xs.begin();}
+  return *elements.begin();}
 
 template<
   typename Element,
   typename... Args>
 Element maxOrElse(
-  const std::set<Element, Args...>& xs,
+  const std::set<Element, Args...>& elements,
   const Element& default_value)
 { return
-    xs.empty() ? default_value : *xs.rbegin();}
+    elements.empty() ?
+    default_value :
+    *elements.rbegin();}
 
 template<
     typename Element,
     typename... Args>
     Element minOrElse(
-      const std::set<Element, Args...>& xs,
+      const std::set<Element, Args...>& elements,
       const Element& default_value)
   { return
-      xs.empty() ? default_value : *xs.begin();}
+      elements.empty() ?
+      default_value :
+      *elements.begin();}
 
 template<
   template<typename...> class  Container,
   typename Element>
 bool contains(
   const Element& y,
-  const Container<Element>& xs)
+  const Container<Element>& elements)
 { return
-    any([&y] (const Element& x) {return x == y;}, xs);}
+    any(
+      [&y](const Element& x){return x==y;},
+      elements);}
 
 template<
   typename T>
 bool contains(
-  const T& x,
-  const std::set<T>& xs)
+  const T& y,
+  const std::set<T>& elements)
 { return
-    xs.find(v) != xs.end();}
+    elements.find(y) != elements.end();}
+
 inline bool contains(
   const char c,
   const String& s)
 {return
-    s.find(c) != std::string::rpos;}
+    s.find(c) != std::string::npos;}
 
 template<
   template<typename...> class Container,
@@ -256,26 +320,41 @@ Container<String> split(
 
 template<
   template<typename...> class Container,
-  typename Eleemnt1n,
+  typename ElementIn,
   typename Function,
-  typename ElementOut = typename std::result_of<Function&(ElementIn)>::type>
+  typename ElementOut = typename std::result_of<Function&(ElementIn)>::type >
 Container<ElementOut> map(
-  const Function& f,
-  const Container<ElementIn>& xs)
-{ Container<ElementOut> ys(xs.size());
-  std::transform(begin(xs), end(xs), begin(ys), f);
-  return ys;}
+  const Function& function,
+  const Container<ElementIn>& elements)
+{ Container<ElementOut>
+    transformed_elements(
+      elements.size());
+  std::transform(
+    begin(
+      elements),
+    end(
+      elements),
+    begin(
+      transformed_elements),
+    function);
+  return
+    transformed_elements;}
+
 
 template<
-  typename ElemenIn,
+  typename ElementIn,
   typename Function,
-  typename Element2 = typename std::result_of<Function&(ElementIn)>::type>
-std::set<Element2> map(
-  const Function& f,
-  const std::set<ElementIn>& xs)
-{ std::set<ElementOut> ys;
-  for (const ElementIn& x: xs) ys.insert(f(x));
-  return ys;}
+  typename ElementOut = typename std::result_of<Function&(ElementIn)>::type>
+std::set<ElementOut> map(
+  const Function& function,
+  const std::set<ElementIn>& elements)
+{ std::set<ElementOut> transformed_elements;
+  for (const ElementIn& element: elements)
+    transformed_elements.insert(
+      function(
+        element));
+  return
+    transformed_elements;}
 
 template<
   template<typename...> class Container,
@@ -288,8 +367,10 @@ ElementOut foldl(
   const Container<ElementIn>& elements)
 { return
     std::accumulate(
-      begin(elements),
-      end(elements),
+      begin(
+        elements),
+      end(
+        elements),
       accumulator,
       function);}
 template<
@@ -309,9 +390,9 @@ ElementOut accumulate(
 template<
   template<typename...> class  Container,
   typename Element>
-ElementOut sum(
-  const Container<ElementIn>& elements,
-  const ElementOut& zero)
+Element sum(
+  const Container<Element>& elements,
+  const Element& zero)
 {return
     foldl(
       zero,
@@ -322,13 +403,15 @@ ElementOut sum(
 template<
   template<typename...> class  Container,
   typename Element>
-ElementOut sum(
-  const Container<ElementIn>& elements)
+Element sum(
+  const Container<Element>& elements)
 {return
-    sum(elements, Element());}
+    sum(
+      elements,
+      Element());}
 
 template<
-  template<typename...> Container,
+  template<typename...> class Container,
   typename Element>
 double mean(
   const Container<Element>& elements)
@@ -336,42 +419,49 @@ double mean(
     (double) sum(elements, (Element) 0) / (double) elements.size();}
 
 template<
-  template<typename...> Container,
+  template<typename...> typename Container,
   typename ElementIn,
   typename ElementOut,
   typename Function>
 ElementOut foldr(
-  const Container<ElementIn& elements,
+  const Container<ElementIn>& elements,
   const Function& function,
   const ElementOut& accumulator)
 {return
     std::accumulate(
-      begin(elements),
-      end(elements),
+      begin(
+        elements),
+      end(
+        elements),
       accumulator,
-      function)}
+      function);}
 
 template<
   typename Predicate>
 auto negation(
   const Predicate& p)
 { return
-    [&p] (const auto& x) -> bool {return not p(x);}}
+    [&p] (const auto& x) -> bool {return not p(x);};}
 
 template<
   template<typename...> class Container,
   typename Element,
   typename Predicate>
 Container<Element> filter(
-  const Predicate& p,
-  Container<Element> xs)
-{ xs.erase(
+  const Predicate& predicate,
+  Container<Element> elements)
+{ elements.erase(
     std::remove_if(
-      begin(xs),
-      end(xs),
-      negation(f),
-      end(xs)));
-  return xs;}
+      begin(
+        elements),
+      end(
+        elements),
+      negation(
+        predicate),
+      end(
+        elements)));
+  return
+    elements;}
 
 template<
   typename Element,
@@ -381,13 +471,17 @@ std::set<Element> filter(
   std::set<Element> elements)
 { std::set<Element> filtered_elements;
   std::copy_if(
-    begin(elements),
-    end(elements),
+    begin(
+      elements),
+    end(
+      elements),
     std::inserter(
       filtered_elements,
-      end(filtered_elements) ),
+      end(
+        filtered_elements) ),
     predicate);
-  return filtered_elements;}
+  return
+    filtered_elements;}
 
 template<
   template<typename...> class Container,
@@ -395,17 +489,21 @@ template<
   typename Function,
   typename ContainerMapped= typename std::result_of<Function&(ElementIn)>::type,
   typename ElementOut= typename ContainerMapped::value_type>
-Container<ElementOut< fmap(
+Container<ElementOut> fmap(
   const Function& function,
   const Container<ElementIn>& elements_in)
 { Container<ElementOut> elements_out;
-  for (const& element : elements_in) {
-    const Container<ElementOut> elements_mapped
+  for (const ElementOut& element : elements_in) {
+    const Container<ElementOut>
+      elements_mapped
       = function(element);
     elements_out.insert(
-      end(elements_out),
-      begin(elements_mapped),
-      end(elements_mapped));}
+      end(
+        elements_out),
+      begin(
+        elements_mapped),
+      end(
+        elements_mapped));}
   return elements_out;}
 
 
