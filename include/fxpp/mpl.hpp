@@ -8,16 +8,16 @@
 namespace fxpp { namespace meta {
 
 template<
-  template<typename...> class L, //some kind of list
+  template<typename...> class Container, //some kind of list
   typename Head,
   typename... Tail>
 struct cons{
-  using type = L<Head, typename cons<L, Tail...>::type>;};
+  using type = Container<Head, typename cons<Container, Tail...>::type>;};
 
 template<
-  template<typename...> class L,
+  template<typename...> class Container,
   typename Head>
-struct cons<L, Head> {
-  using type = L<Head>;};
+struct cons<Container, Head> {
+  using type = Container<Head>;};
 
 } /*namespace meta*/ } /*namespace fxpp*/
