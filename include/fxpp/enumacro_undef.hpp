@@ -6,7 +6,7 @@
 #undef ENUM
 #undef ENUMOUT
 #undef ENUMCLASS
-#undef ENUNCASEOUT
+#undef ENUMCASEOUT
 #undef ENUMVAL
 
 
