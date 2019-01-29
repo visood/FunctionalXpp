@@ -47,9 +47,15 @@ private:
   std::unique_ptr<ElemType> _elem;
 };
 
+// template<
+//   typename ElemType>
+// Maybe<ElemType> None = Maybe<ElemType>();
+
 template<
-  typename ElemType>
-Maybe<ElemType> None = Maybe<ElemType>();
+  typename Element>
+Maybe<Element> None()
+{return
+    Maybe<Element>();}
 
 template<
   typename ElemType>

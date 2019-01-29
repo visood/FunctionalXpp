@@ -4,6 +4,7 @@
   20190124
 */
 #include "fxpp/mpl.hpp"
+#include "fxpp/maybe.hpp"
 
 namespace fxpp { namespace property { 
 
@@ -73,5 +74,29 @@ template<
   typename... Tail>
 using ptree_cons = meta::cons<PTree, Head, Tail...>;
 
+template<
+  typename Element>
+Maybe::Maybe<Element> get_value(
+  const PLeaf<Element>& leaf,
+  const char* key)
+{
+  if (leaf.key != key)
+    return Maybe::None<Element>();
+  return leaf.value;
+}
+
+// template<
+//   typename Element,
+//   typename... Args>
+// Element get_value(
+//   const PTree< PLeaf<Element>, PTree<Args..> >& ptree,
+//   const char* key);
+
+// template<
+//   typename PType,
+//   typename... Args>
+// Element get_value(
+//   const PTree< PNode<PType>, PTree<Args...> >& ptree,
+//   const char* key);
 } /*namespace property */
 } /*namespace fxpp */

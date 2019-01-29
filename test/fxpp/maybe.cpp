@@ -16,10 +16,10 @@ TEST_CASE(
   "[Maybe][Containers]"
 ){
   CHECK(
-    None<int>.empty);
+    None<int>().empty);
 
   const auto& mb0=
-    None<int>;
+    None<int>();
   CHECK(
     mb0.empty);
   const auto mb1=
