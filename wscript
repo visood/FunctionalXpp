@@ -172,7 +172,6 @@ def configure_clang(conf):
          '-fwrapv',
          '-O3',
          "-std=c++17",
-         "-Wl",
          "-stdlib=libc++"])
     conf.env.LINKFLAGS=[
         "-std=c++17",
@@ -188,7 +187,7 @@ def configure_clang(conf):
     conf.env.append_unique(
         "CXXFLAGS",
         ["-g",
-        "-glidb",
+        "-glldb",
         "-Wdocumentation"])
     conf.define(
         "DEBUG", 1)
@@ -266,11 +265,11 @@ class back_debug(BuildContext):
 
 class alt_release(BuildContext):
     cmd = 'build_clang_release'
-    variant = 'alternative-clang'
+    variant = 'clang-release'
 
 class alt_debug(BuildContext):
     cmd = 'build_clang_debug'
-    variant = 'alternative-clang-debug'
+    variant = 'clang-debug'
 
 def build(bld):
     if not bld.variant:
