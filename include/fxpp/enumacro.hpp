@@ -26,7 +26,7 @@
   ENUMOUT(enum_name, ENUMENTRIES)
 
 #include <string>
-#include <iostream>
+#include <sstream>
 
 template<
   typename EnumClass>

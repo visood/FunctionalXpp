@@ -25,13 +25,12 @@ def printProcess(msg, l = 70):
 
 def global_env(ctx):
     ctx.env.appname = APPNAME
-    ctx.env.append_unique('LDFLAGS_N',
-                          [ 'bz2',
-                            'gsl',
-                            'gslcblas',
-                            'dl']
-    )
-    ctx.env.append_unique('CATCH_PATH', '/usr/local/include/Catch')
+    ctx.env.append_unique(
+        'LDFLAGS_N',
+        [ 'bz2',
+          'gsl',
+          'gslcblas',
+          'dl'])
     ctx.env.append_unique(
         "INCLUDES_REL",
         ['include',
@@ -41,35 +40,50 @@ def global_env(ctx):
          'include/database',
          'include/utils'])
     #ctx.env.INCLUDES_N = ["../../../" + x for x in ctx.env.INCLUDES_REL]
-    ctx.env.append_unique('INCLUDES_ABS',
-                           ctx.env.CATCH_PATH[0])
 
 def configure_gcc(conf):
-    conf.find_program('g++', var = 'CXX', mandatory = True)
+    conf.find_program(
+        'g++',
+        var = 'CXX',
+        mandatory = True)
     conf.load('g++')
-    conf.find_program('gcc', var = 'C', mandatory = True)
-    #conf.load('gcc')
+    conf.find_program(
+        'gcc',
+        var = 'C',
+        mandatory = True)
     global_env(conf)
-    conf.env.append_unique('STLIB', 'stdc++')
-    conf.env.append_unique('LDFLAGS_N', 'stdc++')
-    conf.setenv('release', env=conf.env.derive())
-    conf.env.CXXFLAGS = ['-Wall',
-                         '-Wno-unknown-pragmas',
-                         '-Wextra',
-                         '-Wconversion',
-                         '-O3',
-                         '-std=c++1z']
-    conf.define('RELEASE', 1)
+    conf.env.append_unique(
+        'STLIB',
+        'stdc++')
+    conf.env.append_unique(
+        'LDFLAGS_N',
+        'stdc++')
+    conf.setenv(
+        'release',
+        env=conf.env.derive())
+    conf.env.CXXFLAG =[
+        '-Wall',
+        '-Wno-unknown-pragmas',
+        '-Wextra',
+        '-Wconversion',
+        '-O3',
+        '-std=c++1z']
+    conf.define(
+        'RELEASE', 1)
     #print ("environment release\n")
     #print(conf.all_envs['release'])
     #print "-----------------------------------------------------------------------------------------"
 
-    conf.setenv('debug', env=conf.env.derive())
-    conf.env.CXXFLAGS = ['-DDEBUG',
-                         '-D_GLIBCXX_DEBUG',
-                         '-D_GLIBCXX_DEBUG_PEDANTIC',
-                         '-g', '-std=c++1z']
-    conf.define('DEBUG', 1)
+    conf.setenv(
+        'debug',
+        env=conf.env.derive())
+    conf.env.CXXFLAGS=[
+        '-DDEBUG',
+        '-D_GLIBCXX_DEBUG',
+        '-D_GLIBCXX_DEBUG_PEDANTIC',
+        '-g', '-std=c++1z']
+    conf.define(
+        'DEBUG', 1)
     #print ("environment debug\n")
     #print(conf.all_envs['debug'])
     #print "-----------------------------------------------------------------------------------------"
@@ -149,11 +163,19 @@ def configure_clang(conf):
     conf.load(
         "clang++")
     global_env(conf)
+
     conf.env.append_unique(
         "LDFLAGS_N",
         ["pthread",
          "util",
          "m"])
+    conf.env.append_unique(
+        'CATCH_PATH',
+        '/usr/local/include/Catch')
+    conf.env.append_unique(
+        'INCLUDES_ABS',
+        conf.env.CATCH_PATH[0])
+
     conf.setenv(
         "clang-release",
         env=conf.env.derive())
@@ -176,6 +198,7 @@ def configure_clang(conf):
     conf.env.LINKFLAGS=[
         "-std=c++17",
         "-stdlib=libc++"]
+
     conf.env.append_unique(
         "LIBS",
         ["c++", "c++abi"])
